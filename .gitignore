@@ -1,0 +1,16 @@
+# Python junk
+__pycache__/
+*.pyc
+
+# Our private toolbox (virtual environment)
+venv/
+
+# Secrets - never share!
+.env
+
+# Local database and uploaded photos
+db.sqlite3
+media/
+
+# Editor settings
+.vscode/
