@@ -15,7 +15,9 @@
           {% endif %}
         {% endwith %}
         <div class="card-body">
-          <h2 class="h6 card-title">{{ listing.title }}</h2>
+          <h2 class="h6 card-title">
+            <a href="{% url 'listings:detail' listing.pk %}" class="stretched-link text-decoration-none text-dark">{{ listing.title }}</a>
+          </h2>
           <p class="fw-bold mb-1">
             {% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}
           </p>

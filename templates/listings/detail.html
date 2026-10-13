@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ listing.title }} - Campus Marketplace{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'listings:home' %}">Home</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ listing.title }}</li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    {% for photo in listing.images.all %}
+      <img src="{{ photo.image.url }}" class="img-fluid rounded shadow-sm mb-3" alt="{{ listing.title }} photo {{ forloop.counter }}">
+    {% empty %}
+      <div class="bg-secondary-subtle rounded d-flex align-items-center justify-content-center text-muted" style="height: 300px;">No photo</div>
+    {% endfor %}
+  </div>
+
+  <div class="col-lg-5">
+    <h1 class="h3">{{ listing.title }}</h1>
+    <p class="display-6 fw-bold">
+      {% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}
+    </p>
+
+    <p>
+      <span class="badge text-bg-secondary">{{ listing.category.name }}</span>
+      <span class="badge text-bg-info">{{ listing.get_condition_display }}</span>
+      <span class="badge text-bg-light border">Pick-up: {{ listing.get_campus_display }}</span>
+      {% if listing.status != "available" %}
+        <span class="badge text-bg-danger">{{ listing.get_status_display }}</span>
+      {% endif %}
+    </p>
+
+    <h2 class="h6 mt-4">Description</h2>
+    <p>{{ listing.description|linebreaksbr }}</p>
+
+    <hr>
+    <p class="mb-1"><strong>Seller:</strong> {{ listing.seller.username }}</p>
+    <p class="text-muted small">Posted {{ listing.created_at|date:"j M Y" }}</p>
+
+    <a class="btn btn-primary btn-lg w-100" href="#">Message seller</a>
+  </div>
+</div>
+{% endblock %}
