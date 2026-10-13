@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="h3 mb-4">Latest items</h1>
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+  {% for listing in listings %}
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        {% with photo=listing.images.all.0 %}
+          {% if photo %}
+            <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ listing.title }}" style="height: 180px; object-fit: cover;">
+          {% else %}
+            <div class="bg-secondary-subtle d-flex align-items-center justify-content-center text-muted" style="height: 180px;">No photo</div>
+          {% endif %}
+        {% endwith %}
+        <div class="card-body">
+          <h2 class="h6 card-title">{{ listing.title }}</h2>
+          <p class="fw-bold mb-1">
+            {% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}
+          </p>
+          <span class="badge text-bg-secondary">{{ listing.category.name }}</span>
+          <span class="badge text-bg-light border">{{ listing.get_campus_display }}</span>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-muted">No items yet. Add some in the admin page!</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,3 +1,12 @@
 from django.shortcuts import render
 
-# Create your views here.
+from .models import Listing
+
+
+def home(request):
+    listings = (
+        Listing.objects.filter(status=Listing.Status.AVAILABLE)
+        .select_related("category", "seller")
+        .prefetch_related("images")
+    )
+    return render(request, "listings/home.html", {"listings": listings})
