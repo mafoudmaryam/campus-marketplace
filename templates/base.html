@@ -19,7 +19,8 @@
       <div class="d-flex gap-2 align-items-center">
         <a class="btn btn-warning" href="#">Sell an item</a>
         {% if user.is_authenticated %}
-          <span class="navbar-text text-light">Hi, {{ user.username }}</span>
+          <a class="navbar-text text-light text-decoration-none" href="{% url 'accounts:profile' user.username %}">Hi, {{ user.username }}</a>
+          <a class="btn btn-outline-light" href="{% url 'accounts:edit_profile' %}">Edit profile</a>
           <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-light">Log out</button>
