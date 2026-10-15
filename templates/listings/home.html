@@ -56,25 +56,32 @@
 <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
   {% for listing in listings %}
     <div class="col">
-      <div class="card h-100 shadow-sm">
-        {% with photo=listing.images.all.0 %}
-          {% if photo %}
-            <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ listing.title }}" style="height: 180px; object-fit: cover;">
-          {% else %}
-            <div class="bg-secondary-subtle d-flex align-items-center justify-content-center text-muted" style="height: 180px;">No photo</div>
-          {% endif %}
-        {% endwith %}
-        <div class="card-body">
-          <h2 class="h6 card-title">
-            <a href="{% url 'listings:detail' listing.pk %}" class="stretched-link text-decoration-none text-dark">{{ listing.title }}</a>
-          </h2>
-          <p class="fw-bold mb-1">
-            {% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}
-          </p>
-          <span class="badge text-bg-secondary">{{ listing.category.name }}</span>
-          <span class="badge text-bg-light border">{{ listing.get_campus_display }}</span>
+      <article class="listing-card">
+        <div class="listing-photo">
+          {% with photo=listing.images.all.0 %}
+            {% if photo %}
+              <img src="{{ photo.image.url }}" alt="{{ listing.title }}" loading="lazy">
+            {% else %}
+              <div class="listing-nophoto">No photo</div>
+            {% endif %}
+          {% endwith %}
+          <span class="status-badge">{{ listing.get_status_display }}</span>
         </div>
-      </div>
+        <div class="listing-body">
+          <h2 class="listing-title">
+            <a href="{% url 'listings:detail' listing.pk %}" class="stretched-link">{{ listing.title }}</a>
+          </h2>
+          <p class="listing-price">{% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}</p>
+          <span class="category-tag">{{ listing.category.name }}</span>
+          <div class="listing-meta">
+            <span class="meta-item">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              {{ listing.get_campus_display }}
+            </span>
+            <span class="meta-item">{{ listing.created_at|timesince }} ago</span>
+          </div>
+        </div>
+      </article>
     </div>
   {% empty %}
     <p class="text-muted">No items found.</p>
