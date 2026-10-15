@@ -24,6 +24,13 @@ class MultipleImageField(forms.ImageField):
 
 
 class ListingForm(forms.ModelForm):
+    # Declared before "images" so it is cleaned first and clean_images can use it.
+    remove_images = forms.ModelMultipleChoiceField(
+        queryset=ListingImage.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Remove photos",
+    )
     images = MultipleImageField(
         required=False,
         label="Photos",
@@ -40,8 +47,13 @@ class ListingForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             widget = field.widget
+            if isinstance(widget, forms.CheckboxSelectMultiple):
+                continue
             css = "form-select" if isinstance(widget, forms.Select) else "form-control"
             widget.attrs["class"] = f"{widget.attrs.get('class', '')} {css}".strip()
+        if self.instance.pk:
+            # Only this listing's own photos can be removed.
+            self.fields["remove_images"].queryset = self.instance.images.all()
         self.fields["images"].widget.attrs["accept"] = "image/*"
 
     def clean_price(self):
@@ -53,6 +65,7 @@ class ListingForm(forms.ModelForm):
     def clean_images(self):
         images = self.cleaned_data.get("images") or []
         already_saved = self.instance.images.count() if self.instance.pk else 0
+        already_saved -= len(self.cleaned_data.get("remove_images") or [])
         if already_saved + len(images) > MAX_PHOTOS:
             raise forms.ValidationError(f"A listing can have at most {MAX_PHOTOS} photos.")
         for image in images:
@@ -67,5 +80,7 @@ class ListingForm(forms.ModelForm):
         return listing
 
     def save_images(self):
+        for photo in self.cleaned_data.get("remove_images") or []:
+            photo.delete()
         for image in self.cleaned_data.get("images", []):
             ListingImage.objects.create(listing=self.instance, image=image)

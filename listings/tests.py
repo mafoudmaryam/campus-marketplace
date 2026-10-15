@@ -8,7 +8,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from PIL import Image
 
-from .models import Category, Listing
+from .models import Category, Listing, ListingImage
 
 User = get_user_model()
 
@@ -78,6 +78,56 @@ class CreateListingTests(ListingTestBase):
             response = self.client.post(reverse("listings:create"), self.form_data(images=photos))
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Listing.objects.filter(title="Desk lamp").exists())
+
+
+class EditPhotosTests(ListingTestBase):
+    def setUp(self):
+        super().setUp()
+        self.media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media, ignore_errors=True)
+        self.client.login(username="seller", password="pass12345")
+        self.url = reverse("listings:edit", args=[self.listing.pk])
+        with override_settings(MEDIA_ROOT=self.media):
+            self.photos = [
+                ListingImage.objects.create(listing=self.listing, image=make_photo(f"old{i}.png"))
+                for i in range(4)
+            ]
+
+    def post(self, **extra):
+        with override_settings(MEDIA_ROOT=self.media):
+            return self.client.post(self.url, self.form_data(**extra))
+
+    def test_edit_page_shows_existing_photos_with_remove_checkbox(self):
+        with override_settings(MEDIA_ROOT=self.media):
+            response = self.client.get(self.url)
+        for photo in self.photos:
+            self.assertContains(response, f'id="remove-{photo.pk}"')
+
+    def test_selected_photos_are_removed(self):
+        self.post(remove_images=[self.photos[0].pk, self.photos[1].pk])
+        remaining = set(self.listing.images.values_list("pk", flat=True))
+        self.assertEqual(remaining, {self.photos[2].pk, self.photos[3].pk})
+
+    def test_limit_counts_existing_plus_new_photos(self):
+        response = self.post(images=[make_photo("a.png"), make_photo("b.png")])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.listing.images.count(), 4)
+
+    def test_removing_photos_makes_room_for_new_ones(self):
+        response = self.post(
+            remove_images=[self.photos[0].pk, self.photos[1].pk],
+            images=[make_photo("a.png"), make_photo("b.png")],
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.listing.images.count(), 4)
+
+    def test_cannot_remove_another_listings_photo(self):
+        other_listing = self.make_listing("Other item")
+        with override_settings(MEDIA_ROOT=self.media):
+            foreign = ListingImage.objects.create(listing=other_listing, image=make_photo("f.png"))
+        response = self.post(remove_images=[foreign.pk])
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(ListingImage.objects.filter(pk=foreign.pk).exists())
 
 
 class OwnerOnlyTests(ListingTestBase):
