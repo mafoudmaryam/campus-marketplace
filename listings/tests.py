@@ -261,7 +261,8 @@ class WechatContactTests(ListingTestBase):
     def test_anonymous_user_sees_login_prompt_not_wechat_id(self):
         self.set_wechat()
         response = self.get()
-        self.assertContains(response, "Log in</a> to chat with the seller on WeChat")
+        self.assertContains(response, "Log in to chat on WeChat")
+        self.assertContains(response, reverse("accounts:login") + "?next=" + self.url)
         self.assertNotContains(response, "seller_wx")
         self.assertNotContains(response, "Chat on WeChat")
 
@@ -311,7 +312,7 @@ class WechatContactTests(ListingTestBase):
         self.set_wechat()
         self.client.login(username="other", password="pass12345")
         response = self.get()
-        self.assertContains(response, "wechat-action wechat-action-sticky")
+        self.assertContains(response, 'class="product-actions action-bar"')
         self.assertContains(response, "ID copied! Paste it in WeChat > Contacts > Add Contacts")
         self.assertContains(response, "weixin://")
 
@@ -394,8 +395,8 @@ class DetailPageTests(ListingTestBase):
         self.assertContains(response, 'class="status-pill status-available">Available<')
         self.assertContains(response, "Key details")
         self.assertContains(response, "Pickup location")
-        self.assertContains(response, "Why buy on campus?")
-        self.assertContains(response, "Give items a second life")
+        self.assertContains(response, "How it works on campus")
+        self.assertContains(response, "Pay face to face")
 
     def test_sold_badge(self):
         self.listing.status = Listing.Status.SOLD
