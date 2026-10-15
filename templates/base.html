@@ -12,25 +12,30 @@
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container">
       <a class="navbar-brand" href="{% url 'listings:home' %}">🎓 Campus Marketplace</a>
+      <button class="navbar-toggler" type="button" id="nav-toggle" aria-controls="nav-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav-menu">
       <form class="d-flex flex-grow-1 mx-lg-4 my-2 my-lg-0" method="get" action="{% url 'listings:home' %}">
         <input class="form-control me-2" type="search" name="q" placeholder="Search items" value="{{ request.GET.q }}">
-        <button class="btn btn-outline-light" type="submit">Search</button>
+        <button class="btn btn-outline-light btn-sm text-nowrap px-2" type="submit">Search</button>
       </form>
-      <div class="d-flex gap-2 align-items-center">
-        <a class="btn btn-warning" href="{% url 'listings:create' %}">Sell an item</a>
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <a class="btn btn-warning btn-sm text-nowrap px-2" href="{% url 'listings:create' %}">Sell an item</a>
         {% if user.is_authenticated %}
-          <a class="navbar-text text-light text-decoration-none" href="{% url 'accounts:profile' user.username %}">Hi, {{ user.username }}</a>
-          <a class="btn btn-outline-light" href="{% url 'messaging:inbox' %}">Inbox{% if unread_count %} <span class="badge text-bg-danger">{{ unread_count }}</span>{% endif %}</a>
-          <a class="btn btn-outline-light" href="{% url 'listings:my_listings' %}">My listings</a>
-          <a class="btn btn-outline-light" href="{% url 'accounts:edit_profile' %}">Edit profile</a>
+          <a class="navbar-text text-light text-decoration-none text-nowrap py-0" href="{% url 'accounts:profile' user.username %}">Hi, {{ user.username }}</a>
+          <a class="btn btn-outline-light btn-sm text-nowrap px-2" href="{% url 'messaging:inbox' %}">Inbox{% if unread_count %} <span class="badge text-bg-danger">{{ unread_count }}</span>{% endif %}</a>
+          <a class="btn btn-outline-light btn-sm text-nowrap px-2" href="{% url 'listings:my_listings' %}">My listings</a>
+          <a class="btn btn-outline-light btn-sm text-nowrap px-2" href="{% url 'accounts:edit_profile' %}">Edit profile</a>
           <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
             {% csrf_token %}
-            <button type="submit" class="btn btn-outline-light">Log out</button>
+            <button type="submit" class="btn btn-outline-light btn-sm text-nowrap px-2">Log out</button>
           </form>
         {% else %}
-          <a class="btn btn-outline-light" href="{% url 'accounts:login' %}">Log in</a>
-          <a class="btn btn-outline-light" href="{% url 'accounts:signup' %}">Sign up</a>
+          <a class="btn btn-outline-light btn-sm text-nowrap px-2" href="{% url 'accounts:login' %}">Log in</a>
+          <a class="btn btn-outline-light btn-sm text-nowrap px-2" href="{% url 'accounts:signup' %}">Sign up</a>
         {% endif %}
+      </div>
       </div>
     </div>
   </nav>
@@ -39,5 +44,11 @@
     {% block content %}{% endblock %}
   </main>
 
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function () {
+      var open = document.getElementById('nav-menu').classList.toggle('show');
+      this.setAttribute('aria-expanded', open);
+    });
+  </script>
 </body>
 </html>
