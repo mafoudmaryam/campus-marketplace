@@ -3,61 +3,309 @@
 {% block title %}{{ heading }} - Campus Marketplace{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-8 col-lg-6">
-    {% if missing_wechat %}
-      <div class="alert alert-info">
-        <strong>Add your WeChat so buyers can contact you.</strong>
-        <a href="{% url 'accounts:edit_profile' %}">Go to your profile</a> to add your WeChat ID or QR code.
-      </div>
-    {% endif %}
-    <div class="card">
-      <div class="card-body p-4">
-        <h1 class="h4 mb-3">{{ heading }}</h1>
-        <form method="post" enctype="multipart/form-data">
-          {% csrf_token %}
-          {% if form.non_field_errors %}
-            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-          {% endif %}
-          {% for field in form %}
-            {% if field.name == "remove_images" %}
-              {% if form.instance.pk and form.instance.images.exists %}
-                <div class="mb-3">
-                  <div class="form-label fw-semibold">Current photos</div>
-                  <div class="row g-2">
-                    {% for photo in field.field.queryset %}
-                      <div class="col-4 col-md-3">
-                        <img src="{{ photo.image.url }}" alt="" class="img-thumbnail w-100" style="height: 90px; object-fit: cover;">
-                        <div class="form-check mt-1">
-                          <input class="form-check-input" type="checkbox" name="{{ field.html_name }}" value="{{ photo.pk }}" id="remove-{{ photo.pk }}"{% if photo.pk|stringformat:"s" in field.value %} checked{% endif %}>
-                          <label class="form-check-label small" for="remove-{{ photo.pk }}">Remove</label>
-                        </div>
-                      </div>
-                    {% endfor %}
-                  </div>
-                  {% for error in field.errors %}
-                    <div class="text-danger small mt-1">{{ error }}</div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            {% else %}
-            <div class="mb-3">
-              <label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>
-              {{ field }}
-              {% if field.help_text %}
-                <div class="form-text">{{ field.help_text }}</div>
-              {% endif %}
-              {% for error in field.errors %}
-                <div class="text-danger small mt-1">{{ error }}</div>
-              {% endfor %}
-            </div>
-            {% endif %}
-          {% endfor %}
-          <button type="submit" class="btn btn-primary me-1">Save</button>
-          <a href="{% url 'listings:home' %}" class="btn btn-outline-secondary">Cancel</a>
-        </form>
-      </div>
+<form class="pf sell" method="post" enctype="multipart/form-data" novalidate id="sell-form">
+  {% csrf_token %}
+
+  <div class="pf-top">
+    <div>
+      <h1 class="pf-title">{{ heading }}</h1>
+      <p class="pf-lead">{% if form.instance.pk %}Update your listing. Changes show up right away.{% else %}It takes about a minute. Students on your campus see it right away.{% endif %}</p>
     </div>
   </div>
-</div>
+
+  {% if missing_wechat %}
+    <div class="sell-nudge">
+      <span class="pf-wechat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.5 3C5.4 3 2 5.8 2 9.3c0 2 1.1 3.7 2.8 4.9l-.7 2.1 2.5-1.3c.8.2 1.6.3 2.4.3h.5a5.5 5.5 0 0 1-.3-1.7c0-3.2 3-5.8 6.6-5.8h.5C16.1 4.9 13.1 3 9.5 3z"/><path fill="currentColor" d="M22 14.7c0-2.8-2.7-5-6-5s-6 2.2-6 5 2.7 5 6 5c.7 0 1.4-.1 2-.3l2 1.1-.6-1.8c1.5-.9 2.6-2.4 2.6-4z"/></svg>
+      </span>
+      <div class="sell-nudge-text">
+        <strong>Add your WeChat so buyers can contact you.</strong>
+        <span>Items with WeChat contact sell faster. It only takes a moment.</span>
+      </div>
+      <a class="sell-nudge-btn" href="{% url 'accounts:edit_profile' %}">Add WeChat</a>
+    </div>
+  {% endif %}
+
+  {% if form.non_field_errors %}<div class="pf-alert">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+  <div class="sell-grid">
+    <div class="pf-main">
+
+      {# ---------- photos ---------- #}
+      <section class="pf-card">
+        <div class="sell-section-head">
+          <h2 class="pf-section mb-0">Photos</h2>
+          <span class="sell-count" id="photo-count"></span>
+        </div>
+        <p class="pf-help mt-1">Add up to 5 photos, 5 MB each. The first one is the cover. Bright, clear photos sell faster.</p>
+
+        <div class="sell-photos" id="photo-grid">
+          {% if form.instance.pk %}
+            {% for photo in form.fields.remove_images.queryset %}
+              <div class="sell-photo is-saved" data-saved="1">
+                <img src="{{ photo.image.url }}" alt="">
+                <input class="pf-file sell-remove" type="checkbox" name="remove_images" value="{{ photo.pk }}" id="remove-{{ photo.pk }}"{% if photo.pk|stringformat:"s" in form.remove_images.value %} checked{% endif %}>
+                <label class="sell-photo-x" for="remove-{{ photo.pk }}" title="Remove photo">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                  <span class="visually-hidden">Remove</span>
+                </label>
+                <span class="sell-photo-removed">Will be removed<br><small>Click to keep</small></span>
+              </div>
+            {% endfor %}
+          {% endif %}
+          <label class="sell-add" for="id_images" id="photo-add">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h3l2-3h8l2 3h3v11H3z"/><circle cx="12" cy="13" r="3.5"/><path d="M19 3v4M17 5h4"/></svg>
+            <strong>Add photos</strong>
+            <small>or drop them here</small>
+          </label>
+        </div>
+        <input type="file" name="images" id="id_images" accept="image/*" multiple class="pf-file">
+        {% for error in form.images.errors %}<p class="pf-error mt-2">{{ error }}</p>{% endfor %}
+        {% for error in form.remove_images.errors %}<p class="pf-error mt-2">{{ error }}</p>{% endfor %}
+      </section>
+
+      {# ---------- details ---------- #}
+      <section class="pf-card">
+        <h2 class="pf-section">Details</h2>
+
+        <label class="pf-label" for="id_title">Title</label>
+        <div class="pf-input">
+          <input type="text" name="title" id="id_title" maxlength="100" value="{{ form.title.value|default:'' }}" placeholder="e.g. iPad 6th generation, 32 GB" required>
+          <span class="sell-chars" id="title-count">0/100</span>
+        </div>
+        <p class="pf-help">Say what it is, the brand and the model.</p>
+        {% for error in form.title.errors %}<p class="pf-error">{{ error }}</p>{% endfor %}
+
+        <span class="pf-label">Category</span>
+        <div class="sell-chips" role="radiogroup" aria-label="Category">
+          {% for value, label in form.fields.category.choices %}
+            {% if value %}
+              <label class="sell-chip">
+                <input type="radio" name="category" value="{{ value }}" data-label="{{ label }}"{% if value|stringformat:"s" == form.category.value|stringformat:"s" %} checked{% endif %}>
+                <span>{{ label|capfirst }}</span>
+              </label>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% for error in form.category.errors %}<p class="pf-error mt-2">{{ error }}</p>{% endfor %}
+
+        <span class="pf-label mt-4">Condition</span>
+        <div class="sell-cards sell-cards-4" role="radiogroup" aria-label="Condition">
+          {% for value, label in form.fields.condition.choices %}
+            <label class="sell-card">
+              <input type="radio" name="condition" value="{{ value }}"{% if form.condition.value == value %} checked{% endif %}>
+              <span>
+                <strong>{{ label }}</strong>
+                <small>{% if value == "new" %}Never used, still in the box{% elif value == "like_new" %}Used a few times, no marks{% elif value == "good" %}Normal signs of use{% else %}Works, but clearly used{% endif %}</small>
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+        {% for error in form.condition.errors %}<p class="pf-error mt-2">{{ error }}</p>{% endfor %}
+
+        <label class="pf-label mt-4" for="id_description">Description</label>
+        <div class="pf-input sell-textarea">
+          <textarea name="description" id="id_description" rows="5" placeholder="How old is it? Why are you selling? Anything included, like a charger or a case?" required>{{ form.description.value|default:'' }}</textarea>
+        </div>
+        <p class="pf-help">Be honest about any marks or problems. Buyers trust sellers who are clear.</p>
+        {% for error in form.description.errors %}<p class="pf-error">{{ error }}</p>{% endfor %}
+      </section>
+
+      {# ---------- price and pickup ---------- #}
+      <section class="pf-card">
+        <h2 class="pf-section">Price and pickup</h2>
+
+        <label class="pf-label" for="id_price">Price</label>
+        <div class="sell-price-row">
+          <div class="pf-input sell-price">
+            <span class="sell-yuan">¥</span>
+            <input type="number" name="price" id="id_price" min="0" step="0.01" inputmode="decimal" value="{% if form.instance.pk or form.is_bound %}{{ form.price.value|default_if_none:'' }}{% endif %}" placeholder="0.00" required>
+          </div>
+          <button type="button" class="sell-free" id="price-free">Give it away for free</button>
+        </div>
+        {% for error in form.price.errors %}<p class="pf-error mt-2">{{ error }}</p>{% endfor %}
+
+        <span class="pf-label mt-4">Pickup campus</span>
+        <div class="pf-campus" role="radiogroup" aria-label="Pickup campus">
+          {% for value, label in form.fields.campus.choices %}
+            <label class="pf-campus-option">
+              <input type="radio" name="campus" value="{{ value }}" data-label="{{ label }}"{% if form.campus.value == value %} checked{% endif %}>
+              <span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ label }}
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+        <p class="pf-help mb-0">Where buyers meet you to pick it up.</p>
+        {% for error in form.campus.errors %}<p class="pf-error mt-2">{{ error }}</p>{% endfor %}
+      </section>
+    </div>
+
+    {# ---------- live preview ---------- #}
+    <aside class="sell-side">
+      <p class="sell-side-label">Preview</p>
+      <article class="listing-card sell-preview">
+        <div class="listing-photo">
+          <img id="pv-photo" alt=""{% if form.instance.pk and form.instance.images.all %} src="{{ form.instance.images.all.0.image.url }}"{% else %} hidden{% endif %}>
+          <div class="listing-nophoto" id="pv-nophoto"{% if form.instance.pk and form.instance.images.all %} hidden{% endif %}>Your cover photo</div>
+          <span class="status-badge">Available</span>
+        </div>
+        <div class="listing-body">
+          <h2 class="listing-title" id="pv-title">Your item title</h2>
+          <p class="listing-price" id="pv-price">¥0.00</p>
+          <span class="category-tag" id="pv-category">Category</span>
+          <div class="listing-meta">
+            <span class="meta-item">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span id="pv-campus">Campus</span>
+            </span>
+            <span class="meta-item">just now</span>
+          </div>
+        </div>
+      </article>
+
+      <div class="sell-tips">
+        <p class="sell-tips-title">Tips to sell faster</p>
+        <ul>
+          <li>Take photos in daylight, from a few angles.</li>
+          <li>Mention the brand, model and age in the title.</li>
+          <li>Check similar items to choose a fair price.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  {# ---------- save bar ---------- #}
+  <div class="pf-actions">
+    <a href="{% if form.instance.pk %}{% url 'listings:detail' form.instance.pk %}{% else %}{% url 'listings:home' %}{% endif %}" class="pf-cancel">Cancel</a>
+    <button type="submit" class="pf-save">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+      {% if form.instance.pk %}Save changes{% else %}Publish item{% endif %}
+    </button>
+  </div>
+</form>
+
+<script>
+  (function () {
+    var MAX = 5;
+    var form = document.getElementById('sell-form');
+    var input = document.getElementById('id_images');
+    var grid = document.getElementById('photo-grid');
+    var add = document.getElementById('photo-add');
+    var count = document.getElementById('photo-count');
+    var picked = [];  // new photos chosen in this visit
+
+    function savedLeft() {
+      return grid.querySelectorAll('.sell-photo.is-saved .sell-remove:not(:checked)').length;
+    }
+
+    // keep the hidden file input in sync with the photos shown
+    function syncInput() {
+      if (!window.DataTransfer) { return; }
+      var dt = new DataTransfer();
+      picked.forEach(function (file) { dt.items.add(file); });
+      input.files = dt.files;
+    }
+
+    function render() {
+      grid.querySelectorAll('.sell-photo.is-new').forEach(function (el) { el.remove(); });
+      picked.forEach(function (file, i) {
+        var tile = document.createElement('div');
+        tile.className = 'sell-photo is-new';
+        var img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.alt = '';
+        var x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'sell-photo-x';
+        x.setAttribute('aria-label', 'Remove photo');
+        x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+        x.addEventListener('click', function () { picked.splice(i, 1); syncInput(); render(); });
+        tile.appendChild(img);
+        tile.appendChild(x);
+        grid.insertBefore(tile, add);
+      });
+      var total = savedLeft() + picked.length;
+      add.hidden = total >= MAX;
+      count.textContent = total + '/' + MAX + ' photos';
+      // the first visible photo is the cover
+      grid.querySelectorAll('.sell-photo').forEach(function (el) { el.classList.remove('is-cover'); });
+      var cover = Array.prototype.find.call(grid.querySelectorAll('.sell-photo'), function (el) { return !el.classList.contains('is-removed'); });
+      if (cover) { cover.classList.add('is-cover'); }
+      updatePreviewPhoto(cover);
+    }
+
+    function addFiles(files) {
+      Array.prototype.forEach.call(files, function (file) {
+        if (file.type.indexOf('image/') === 0 && savedLeft() + picked.length < MAX) { picked.push(file); }
+      });
+      syncInput();
+      render();
+    }
+
+    input.addEventListener('change', function () {
+      // without DataTransfer support the browser keeps only the last choice
+      if (!window.DataTransfer) { picked = Array.prototype.slice.call(input.files); render(); return; }
+      addFiles(input.files);
+    });
+
+    // drag and drop onto the photo area
+    ['dragenter', 'dragover'].forEach(function (name) {
+      grid.addEventListener(name, function (event) { event.preventDefault(); grid.classList.add('is-dragging'); });
+    });
+    ['dragleave', 'drop'].forEach(function (name) {
+      grid.addEventListener(name, function () { grid.classList.remove('is-dragging'); });
+    });
+    grid.addEventListener('drop', function (event) {
+      event.preventDefault();
+      addFiles(event.dataTransfer.files);
+    });
+
+    // saved photos: ticking "remove" greys them out, clicking again keeps them
+    grid.querySelectorAll('.sell-remove').forEach(function (box) {
+      var tile = box.closest('.sell-photo');
+      function mark() { tile.classList.toggle('is-removed', box.checked); render(); }
+      box.addEventListener('change', mark);
+      tile.querySelector('.sell-photo-removed').addEventListener('click', function () { box.checked = false; mark(); });
+      tile.classList.toggle('is-removed', box.checked);
+    });
+
+    // live preview of the card buyers will see
+    var title = document.getElementById('id_title');
+    var price = document.getElementById('id_price');
+    var titleCount = document.getElementById('title-count');
+    var pvPhoto = document.getElementById('pv-photo');
+    var pvNoPhoto = document.getElementById('pv-nophoto');
+
+    function updatePreviewPhoto(tile) {
+      var img = tile && tile.querySelector('img');
+      if (img) { pvPhoto.src = img.src; pvPhoto.hidden = false; pvNoPhoto.hidden = true; }
+      else { pvPhoto.hidden = true; pvNoPhoto.hidden = false; }
+    }
+    function checkedLabel(name, fallback) {
+      var box = form.querySelector('input[name="' + name + '"]:checked');
+      return box ? box.getAttribute('data-label') : fallback;
+    }
+    function updatePreview() {
+      document.getElementById('pv-title').textContent = title.value.trim() || 'Your item title';
+      titleCount.textContent = title.value.length + '/100';
+      var value = parseFloat(price.value);
+      document.getElementById('pv-price').textContent = price.value === '' ? '¥0.00' : (value === 0 ? 'Free' : '¥' + (isNaN(value) ? '0.00' : value.toFixed(2)));
+      document.getElementById('pv-category').textContent = checkedLabel('category', 'Category');
+      document.getElementById('pv-campus').textContent = checkedLabel('campus', 'Campus');
+    }
+    form.addEventListener('input', updatePreview);
+    form.addEventListener('change', updatePreview);
+
+    document.getElementById('price-free').addEventListener('click', function () {
+      price.value = '0';
+      updatePreview();
+      price.focus();
+    });
+
+    render();
+    updatePreview();
+  })();
+</script>
 {% endblock %}

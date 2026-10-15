@@ -463,3 +463,26 @@ class DetailPageTests(ListingTestBase):
         self.get()  # warm up the session
         with self.assertNumQueries(11):
             self.get()
+
+
+class SellPageTests(ListingTestBase):
+    def test_sell_page_has_chips_condition_cards_and_publish_button(self):
+        self.client.login(username="seller", password="pass12345")
+        response = self.client.get(reverse("listings:create"))
+        self.assertContains(response, f'name="category" value="{self.category.pk}"')
+        self.assertContains(response, "Used a few times, no marks")
+        self.assertContains(response, "Publish item")
+        self.assertContains(response, "Tips to sell faster")
+
+    def test_edit_page_keeps_choices_and_says_save(self):
+        self.client.login(username="seller", password="pass12345")
+        response = self.client.get(reverse("listings:edit", args=[self.listing.pk]))
+        self.assertContains(response, f'name="category" value="{self.category.pk}" data-label="Books" checked')
+        self.assertContains(response, 'value="good" checked')
+        self.assertContains(response, "Save changes")
+
+    def test_empty_price_is_rejected(self):
+        self.client.login(username="seller", password="pass12345")
+        response = self.client.post(reverse("listings:create"), self.form_data(price=""))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Listing.objects.filter(title="Desk lamp").exists())
