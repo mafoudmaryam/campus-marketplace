@@ -8,6 +8,9 @@
   --muted: #6b7280;
   --line: #e5e7eb;
   --page-bg: #f8fafc;
+  --tag-bg: #eff6ff;
+  --tag-border: #bfdbfe;
+  --tag-text: #1d4ed8;
 }
 
 body {
@@ -174,15 +177,15 @@ body {
   white-space: nowrap;
   padding: .4rem 1rem;
   border-radius: 999px;
-  background: #fff;
-  border: 1px solid var(--line);
-  color: var(--ink);
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  color: var(--tag-text);
   text-decoration: none;
   font-weight: 500;
-  transition: border-color .15s, color .15s;
+  transition: background .15s, border-color .15s;
 }
-.chip:hover { border-color: var(--brand-blue); color: var(--brand-blue); }
-.chip.active { background: var(--brand-blue); border-color: var(--brand-blue); color: #fff; }
+.chip:hover { background: #dbeafe; color: var(--tag-text); }
+.chip.active { background: var(--brand-blue-dark); border-color: var(--brand-blue-dark); color: #fff; }
 
 .filter-bar {
   display: flex;
@@ -238,11 +241,12 @@ body {
 .listing-body { padding: .9rem 1rem 1rem; }
 .listing-title { font-size: 1rem; font-weight: 600; margin: 0 0 .25rem; }
 .listing-title a { color: var(--ink); text-decoration: none; }
-.listing-price { color: var(--brand-blue); font-size: 1.15rem; font-weight: 700; margin: 0 0 .5rem; }
+.listing-price { color: var(--ink); font-size: 1.15rem; font-weight: 700; margin: 0 0 .5rem; }
 .category-tag {
   display: inline-block;
-  background: #eff6ff;
-  color: var(--brand-blue);
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  color: var(--tag-text);
   font-size: .75rem;
   font-weight: 500;
   padding: .15rem .6rem;
@@ -334,9 +338,7 @@ h1, h2, h3, h4, h5 { color: #111827; font-weight: 700; }
   justify-content: center;
   color: var(--muted);
 }
-.detail-price { color: var(--brand-blue); font-size: 2rem; font-weight: 800; }
-.tag-green { background: #d1fae5; color: #047857; }
-.tag-grey { background: #f1f5f9; color: var(--muted); }
+.detail-price { color: var(--ink); font-size: 2rem; font-weight: 800; }
 
 /* avatars on the profile page */
 .avatar-lg { width: 80px; height: 80px; font-size: 2rem; }

@@ -28,8 +28,8 @@
 
     <p>
       <span class="category-tag">{{ listing.category.name }}</span>
-      <span class="category-tag tag-green">{{ listing.get_condition_display }}</span>
-      <span class="category-tag tag-grey">Pick-up: {{ listing.get_campus_display }}</span>
+      <span class="category-tag">{{ listing.get_condition_display }}</span>
+      <span class="category-tag">Pick-up: {{ listing.get_campus_display }}</span>
       {% if listing.status != "available" %}
         <span class="badge text-bg-danger">{{ listing.get_status_display }}</span>
       {% endif %}
