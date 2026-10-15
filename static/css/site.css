@@ -575,27 +575,29 @@ h1, h2, h3, h4, h5 { color: #111827; font-weight: 700; }
 .detail-more { grid-area: more; }
 .detail-why { grid-area: why; }
 
-/* tablets: two columns */
+/* tablets: photos on top, side cards next to each other */
 @media (min-width: 768px) {
   .detail-grid {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
-      "gallery main"
-      "more    more"
-      "keys    why";
+      "gallery gallery"
+      "main    main"
+      "keys    why"
+      "more    more";
   }
+  .detail-keys, .detail-why { align-self: stretch; }
 }
 
-/* desktop: photos and main card, more from the seller underneath, side cards on the right */
-@media (min-width: 1200px) {
+/* desktop: photos and info cards on the left, the main card follows you down the page on the right */
+@media (min-width: 992px) {
   .detail-grid {
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.3fr) minmax(0, 1.05fr);
-    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(0, .9fr) minmax(0, .9fr) minmax(0, 1fr);
     grid-template-areas:
-      "gallery main keys"
-      "gallery main why"
-      "more    more why";
+      "gallery gallery main"
+      "keys    why     main"
+      "more    more    main";
   }
+  .detail-main { position: sticky; top: 1.25rem; }
 }
 
 .detail-card {
@@ -903,8 +905,8 @@ a.seller-name:hover { color: var(--brand-blue-dark); text-decoration: underline;
   font-weight: 500;
 }
 .mini-date { display: flex; align-items: center; gap: .3rem; font-size: .75rem; color: var(--muted); }
-@media (min-width: 768px) and (max-width: 1399.98px) {
-  /* narrow three-up cards: photo on top */
+@media (min-width: 768px) {
+  /* three cards in a row: photo on top */
   .mini-card { flex-direction: column; }
   .mini-photo { flex-basis: auto; height: 130px; }
 }
