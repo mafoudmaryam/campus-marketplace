@@ -46,4 +46,18 @@ def edit_profile(request):
             return redirect("accounts:profile", username=request.user.username)
     else:
         form = ProfileForm(instance=profile)
-    return render(request, "accounts/edit_profile.html", {"form": form})
+    # a small checklist that nudges people to finish their profile
+    steps = [
+        ("Add a profile photo", bool(profile.avatar)),
+        ("Add your display name", bool(profile.display_name)),
+        ("Choose your campus", bool(profile.campus)),
+        ("Add your WeChat ID or QR code", bool(profile.wechat_id or profile.wechat_qr)),
+    ]
+    done = sum(1 for _, ok in steps if ok)
+    context = {
+        "form": form,
+        "profile": profile,
+        "steps": steps,
+        "percent": round(done * 100 / len(steps)),
+    }
+    return render(request, "accounts/edit_profile.html", context)

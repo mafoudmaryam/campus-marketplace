@@ -3,19 +3,181 @@
 {% block title %}Edit profile - Campus Marketplace{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-8 col-lg-6">
-    <div class="card">
-      <div class="card-body p-4">
-        <h1 class="h4 mb-3">Edit your profile</h1>
-        <form class="form-plain" method="post" enctype="multipart/form-data">
-          {% csrf_token %}
-          {{ form.as_p }}
-          <button type="submit" class="btn btn-primary">Save</button>
-          <a href="{% url 'accounts:profile' user.username %}" class="btn btn-outline-secondary">Cancel</a>
-        </form>
+<form class="pf" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+
+  <div class="pf-top">
+    <div>
+      <h1 class="pf-title">Edit your profile</h1>
+      <p class="pf-lead">This is how buyers and sellers see you on Campus Marketplace.</p>
+    </div>
+    <a class="pf-view" href="{% url 'accounts:profile' user.username %}">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      View my profile
+    </a>
+  </div>
+
+  {% if form.non_field_errors %}<div class="pf-alert">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+  <div class="pf-grid">
+
+    {# ---------- left: photo and progress ---------- #}
+    <aside class="pf-card pf-side">
+      <label class="pf-avatar" for="id_avatar" title="Change photo">
+        <img id="avatar-preview" src="{% if profile.avatar %}{{ profile.avatar.url }}{% endif %}" alt=""{% if not profile.avatar %} hidden{% endif %}>
+        <span class="pf-avatar-empty" id="avatar-empty"{% if profile.avatar %} hidden{% endif %} aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.5" r="4.5"/><path d="M3.5 21c.9-4.4 4.2-7 8.5-7s7.6 2.6 8.5 7z"/></svg>
+        </span>
+        <span class="pf-avatar-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3l2-3h8l2 3h3v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        </span>
+      </label>
+      <input type="file" name="avatar" id="id_avatar" accept="image/*" class="pf-file">
+      {% if profile.avatar %}<input type="checkbox" name="avatar-clear" id="avatar-clear" class="pf-file">{% endif %}
+
+      <p class="pf-name" id="name-preview">{{ profile.display_name|default:user.username }}</p>
+      <p class="pf-handle">@{{ user.username }}</p>
+
+      <div class="pf-photo-actions">
+        <label for="id_avatar" class="pf-btn-soft">Change photo</label>
+        <button type="button" class="pf-btn-text" id="avatar-remove"{% if not profile.avatar %} hidden{% endif %}>Remove</button>
       </div>
+      {% for error in form.avatar.errors %}<p class="pf-error">{{ error }}</p>{% endfor %}
+
+      <div class="pf-progress">
+        <div class="pf-progress-head"><span>Profile complete</span><strong>{{ percent }}%</strong></div>
+        <div class="pf-bar"><span style="width: {{ percent }}%"></span></div>
+        <ul class="pf-steps">
+          {% for label, ok in steps %}
+            <li class="{% if ok %}is-done{% endif %}">
+              {% if ok %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+              {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg>
+              {% endif %}
+              {{ label }}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+
+    {# ---------- right: the details ---------- #}
+    <div class="pf-main">
+      <section class="pf-card">
+        <h2 class="pf-section">Basic info</h2>
+
+        <label class="pf-label" for="id_display_name">Display name</label>
+        <div class="pf-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg>
+          <input type="text" name="display_name" id="id_display_name" maxlength="50" value="{{ form.display_name.value|default:'' }}" placeholder="e.g. Anna Li">
+        </div>
+        <p class="pf-help">The name people see next to your items and messages. Leave it empty to use your username.</p>
+        {% for error in form.display_name.errors %}<p class="pf-error">{{ error }}</p>{% endfor %}
+
+        <span class="pf-label">Campus</span>
+        <div class="pf-campus" role="radiogroup" aria-label="Campus">
+          {% for value, label in form.fields.campus.choices %}
+            <label class="pf-campus-option">
+              <input type="radio" name="campus" value="{{ value }}"{% if form.campus.value == value %} checked{% endif %}>
+              <span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ label }}
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+        {% for error in form.campus.errors %}<p class="pf-error">{{ error }}</p>{% endfor %}
+      </section>
+
+      <section class="pf-card pf-wechat">
+        <div class="pf-section-head">
+          <span class="pf-wechat-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.5 3C5.4 3 2 5.8 2 9.3c0 2 1.1 3.7 2.8 4.9l-.7 2.1 2.5-1.3c.8.2 1.6.3 2.4.3h.5a5.5 5.5 0 0 1-.3-1.7c0-3.2 3-5.8 6.6-5.8h.5C16.1 4.9 13.1 3 9.5 3z"/><path fill="currentColor" d="M22 14.7c0-2.8-2.7-5-6-5s-6 2.2-6 5 2.7 5 6 5c.7 0 1.4-.1 2-.3l2 1.1-.6-1.8c1.5-.9 2.6-2.4 2.6-4z"/></svg>
+          </span>
+          <div>
+            <h2 class="pf-section mb-0">WeChat contact</h2>
+            <p class="pf-help mb-0">Buyers tap "Chat on WeChat" on your items to reach you. Only logged-in students can see it.</p>
+          </div>
+        </div>
+
+        <label class="pf-label" for="id_wechat_id">{{ form.wechat_id.label }}</label>
+        <div class="pf-input">
+          <span class="pf-prefix">ID</span>
+          <input type="text" name="wechat_id" id="id_wechat_id" maxlength="50" value="{{ form.wechat_id.value|default:'' }}" placeholder="e.g. anna_li_2026" autocomplete="off">
+        </div>
+        <p class="pf-help">{{ form.wechat_id.help_text|safe }}</p>
+        {% for error in form.wechat_id.errors %}<p class="pf-error">{{ error }}</p>{% endfor %}
+
+        <span class="pf-label">{{ form.wechat_qr.label }}</span>
+        <div class="pf-qr">
+          <label class="pf-drop" for="id_wechat_qr" id="qr-drop">
+            <img id="qr-preview" src="{% if profile.wechat_qr %}{{ profile.wechat_qr.url }}{% endif %}" alt="Your WeChat QR code"{% if not profile.wechat_qr %} hidden{% endif %}>
+            <span class="pf-drop-empty" id="qr-empty"{% if profile.wechat_qr %} hidden{% endif %}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v7h-7M17 21v-1"/></svg>
+              <strong>Upload QR code</strong>
+              <small>PNG or JPG, up to 2 MB</small>
+            </span>
+          </label>
+          <div class="pf-qr-text">
+            <p class="pf-help mt-0">{{ form.wechat_qr.help_text|safe }}</p>
+            <div class="pf-photo-actions justify-content-start">
+              <label for="id_wechat_qr" class="pf-btn-soft">{% if profile.wechat_qr %}Replace QR code{% else %}Choose image{% endif %}</label>
+              <button type="button" class="pf-btn-text" id="qr-remove"{% if not profile.wechat_qr %} hidden{% endif %}>Remove</button>
+            </div>
+          </div>
+        </div>
+        <input type="file" name="wechat_qr" id="id_wechat_qr" accept="image/*" class="pf-file">
+        {% if profile.wechat_qr %}<input type="checkbox" name="wechat_qr-clear" id="qr-clear" class="pf-file">{% endif %}
+        {% for error in form.wechat_qr.errors %}<p class="pf-error">{{ error }}</p>{% endfor %}
+      </section>
     </div>
   </div>
-</div>
+
+  {# ---------- save bar ---------- #}
+  <div class="pf-actions">
+    <a href="{% url 'accounts:profile' user.username %}" class="pf-cancel">Cancel</a>
+    <button type="submit" class="pf-save">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+      Save changes
+    </button>
+  </div>
+</form>
+
+<script>
+  (function () {
+    // show a chosen picture straight away, and let people remove the old one
+    function picker(fileId, imgId, emptyId, removeId, clearId) {
+      var file = document.getElementById(fileId);
+      var img = document.getElementById(imgId);
+      var empty = document.getElementById(emptyId);
+      var remove = document.getElementById(removeId);
+      var clear = document.getElementById(clearId);
+      file.addEventListener('change', function () {
+        if (!file.files[0]) { return; }
+        img.src = URL.createObjectURL(file.files[0]);
+        img.hidden = false;
+        empty.hidden = true;
+        remove.hidden = false;
+        if (clear) { clear.checked = false; }
+      });
+      remove.addEventListener('click', function () {
+        file.value = '';
+        img.hidden = true;
+        img.removeAttribute('src');
+        empty.hidden = false;
+        remove.hidden = true;
+        if (clear) { clear.checked = true; }
+      });
+    }
+    picker('id_avatar', 'avatar-preview', 'avatar-empty', 'avatar-remove', 'avatar-clear');
+    picker('id_wechat_qr', 'qr-preview', 'qr-empty', 'qr-remove', 'qr-clear');
+
+    // the name under the photo follows what you type
+    var name = document.getElementById('id_display_name');
+    var preview = document.getElementById('name-preview');
+    var fallback = '{{ user.username|escapejs }}';
+    name.addEventListener('input', function () { preview.textContent = name.value.trim() || fallback; });
+  })();
+</script>
 {% endblock %}

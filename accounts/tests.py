@@ -92,3 +92,39 @@ class WechatFormLabelTests(TestCase):
         response = self.client.get(reverse("accounts:edit_profile"))
         self.assertContains(response, "WeChat ID (for buyers to add you)")
         self.assertContains(response, "Find it in WeChat > Me > your name > WeChat ID")
+
+
+class EditProfilePageTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("dana", password="pass12345")
+        self.client.login(username="dana", password="pass12345")
+        self.media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media, ignore_errors=True)
+        self.url = reverse("accounts:edit_profile")
+
+    def post(self, **extra):
+        data = {"display_name": "Dana", "campus": "huaxi", "wechat_id": ""}
+        data.update(extra)
+        with override_settings(MEDIA_ROOT=self.media):
+            return self.client.post(self.url, data)
+
+    def test_progress_starts_at_a_quarter(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["percent"], 25)
+        self.assertContains(response, "Add your WeChat ID or QR code")
+
+    def test_campus_is_picked_with_cards(self):
+        self.post()
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.campus, "huaxi")
+        response = self.client.get(self.url)
+        self.assertContains(response, 'value="huaxi" checked')
+
+    def test_photo_can_be_added_and_removed(self):
+        self.post(avatar=make_qr(name="me.png"))
+        self.user.profile.refresh_from_db()
+        self.assertTrue(self.user.profile.avatar)
+        self.assertEqual(self.client.get(self.url).context["percent"], 75)
+        self.post(**{"avatar-clear": "on"})
+        self.user.profile.refresh_from_db()
+        self.assertFalse(self.user.profile.avatar)
