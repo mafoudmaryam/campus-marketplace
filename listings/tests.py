@@ -187,3 +187,51 @@ class BrowseTests(ListingTestBase):
         self.assertEqual(len(response.context["listings"]), 12)
         second = self.client.get(reverse("listings:home"), {"page": 2})
         self.assertEqual(len(second.context["listings"]), 3)
+
+    def titles(self, **params):
+        response = self.client.get(reverse("listings:home"), params)
+        return [listing.title for listing in response.context["listings"]]
+
+    def test_price_range_filter(self):
+        self.make_listing("Cheap pen", price=5)
+        self.make_listing("Pricey chair", price=100)
+        self.assertEqual(set(self.titles(min_price="10", max_price="50")), {"Calculus book"})
+        self.assertEqual(set(self.titles(min_price="50")), {"Pricey chair"})
+        self.assertEqual(set(self.titles(max_price="5")), {"Cheap pen"})
+
+    def test_invalid_price_is_ignored(self):
+        self.assertEqual(self.titles(min_price="abc", max_price="-3"), ["Calculus book"])
+
+    def test_sort_by_price(self):
+        self.make_listing("Cheap pen", price=5)
+        self.make_listing("Pricey chair", price=100)
+        self.assertEqual(self.titles(sort="price_asc"), ["Cheap pen", "Calculus book", "Pricey chair"])
+        self.assertEqual(self.titles(sort="price_desc"), ["Pricey chair", "Calculus book", "Cheap pen"])
+
+    def test_default_sort_is_newest_first(self):
+        self.make_listing("Newer item")
+        self.assertEqual(self.titles(), ["Newer item", "Calculus book"])
+        self.assertEqual(self.titles(sort="nonsense"), ["Newer item", "Calculus book"])
+
+    def test_filters_work_together_with_search_and_sort(self):
+        self.make_listing("Blue lamp", price=30, campus="huaxi")
+        self.make_listing("Red lamp", price=10, campus="huaxi")
+        self.make_listing("Green lamp", price=20, campus="jiangan")
+        result = self.titles(q="lamp", campus="huaxi", min_price="5", sort="price_asc")
+        self.assertEqual(result, ["Red lamp", "Blue lamp"])
+
+    def test_category_chips_are_listed_and_active_one_is_marked(self):
+        shoes = Category.objects.create(name="Shoes", slug="shoes")
+        response = self.client.get(reverse("listings:home"), {"category": "shoes", "sort": "price_asc"})
+        chips = {chip["name"]: chip for chip in response.context["chips"]}
+        self.assertEqual(set(chips), {"All", "Books", "Shoes"})
+        self.assertContains(response, 'class="chip active"', count=1)
+        self.assertIn("sort=price_asc", chips["Books"]["querystring"])
+        self.assertIn("category=books", chips["Books"]["querystring"])
+        self.assertNotIn("category", chips["All"]["querystring"])
+
+    def test_pagination_links_keep_filters(self):
+        for i in range(14):
+            self.make_listing(f"Item {i}", price=10 + i)
+        response = self.client.get(reverse("listings:home"), {"min_price": "10", "sort": "price_asc"})
+        self.assertContains(response, "min_price=10&amp;sort=price_asc&page=2")

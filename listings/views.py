@@ -1,3 +1,6 @@
+from decimal import Decimal, InvalidOperation
+from urllib.parse import urlencode
+
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -7,6 +10,22 @@ from django.views.decorators.http import require_POST
 
 from .forms import ListingForm
 from .models import Category, Listing
+
+
+SORTS = {
+    "newest": ("Newest first", "-created_at"),
+    "price_asc": ("Price low to high", "price"),
+    "price_desc": ("Price high to low", "-price"),
+}
+
+
+def parse_price(value):
+    """Turn a query-string value into a non-negative Decimal, or None if it is empty or invalid."""
+    try:
+        price = Decimal(value.strip())
+    except (InvalidOperation, AttributeError):
+        return None
+    return price if price.is_finite() and price >= 0 else None
 
 
 def home(request):
@@ -26,10 +45,36 @@ def home(request):
     if campus in Listing.Campus.values:
         listings = listings.filter(campus=campus)
 
+    min_price = parse_price(request.GET.get("min_price", ""))
+    max_price = parse_price(request.GET.get("max_price", ""))
+    if min_price is not None:
+        listings = listings.filter(price__gte=min_price)
+    if max_price is not None:
+        listings = listings.filter(price__lte=max_price)
+
+    sort = request.GET.get("sort", "")
+    if sort not in SORTS:
+        sort = "newest"
+    # pk as a tie-breaker keeps pagination stable
+    listings = listings.order_by(SORTS[sort][1], "-pk")
+
     page = Paginator(listings, 12).get_page(request.GET.get("page"))
     # keep the search and filters in the page links
     params = request.GET.copy()
     params.pop("page", None)
+
+    # category chips keep every other filter but replace the category
+    chip_params = params.copy()
+    chip_params.pop("category", None)
+    chip_base = chip_params.urlencode()
+    chips = [{"name": "All", "slug": "", "querystring": chip_base}]
+    for item in Category.objects.all():
+        chips.append({
+            "name": item.name,
+            "slug": item.slug,
+            "querystring": urlencode({**chip_params.dict(), "category": item.slug}),
+        })
+
     context = {
         "listings": page,
         "page": page,
@@ -38,6 +83,11 @@ def home(request):
         "query": query,
         "selected_category": category,
         "selected_campus": campus,
+        "chips": chips,
+        "min_price": request.GET.get("min_price", "") if min_price is not None else "",
+        "max_price": request.GET.get("max_price", "") if max_price is not None else "",
+        "sorts": [(key, label) for key, (label, _) in SORTS.items()],
+        "selected_sort": sort,
         "querystring": params.urlencode(),
     }
     return render(request, "listings/home.html", context)

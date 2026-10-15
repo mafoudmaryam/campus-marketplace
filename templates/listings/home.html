@@ -10,30 +10,44 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="h3 mb-3">Latest items</h1>
+<nav class="chips" aria-label="Categories">
+  {% for chip in chips %}
+    <a class="chip{% if chip.slug == selected_category %} active{% endif %}" href="?{{ chip.querystring }}"{% if chip.slug == selected_category %} aria-current="true"{% endif %}>{{ chip.name }}</a>
+  {% endfor %}
+</nav>
 
-<form method="get" class="row g-2 mb-4">
+<form method="get" class="filter-bar">
   <input type="hidden" name="q" value="{{ query }}">
-  <div class="col-sm-4 col-md-3">
-    <select name="category" class="form-select" onchange="this.form.submit()">
-      <option value="">All categories</option>
-      {% for category in categories %}
-        <option value="{{ category.slug }}" {% if category.slug == selected_category %}selected{% endif %}>{{ category.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-sm-4 col-md-3">
-    <select name="campus" class="form-select" onchange="this.form.submit()">
+  <input type="hidden" name="category" value="{{ selected_category }}">
+  <div class="filter-field">
+    <label for="campus" class="form-label">Campus</label>
+    <select id="campus" name="campus" class="form-select" onchange="this.form.submit()">
       <option value="">All campuses</option>
       {% for value, label in campuses %}
         <option value="{{ value }}" {% if value == selected_campus %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
   </div>
-  <div class="col-auto">
-    <noscript><button class="btn btn-primary" type="submit">Filter</button></noscript>
-    {% if query or selected_category or selected_campus %}
-      <a class="btn btn-outline-secondary" href="{% url 'listings:home' %}">Clear</a>
+  <div class="filter-field filter-price">
+    <label for="min_price" class="form-label">Price (¥)</label>
+    <div class="input-group">
+      <input id="min_price" type="number" min="0" step="any" name="min_price" class="form-control" placeholder="Min" value="{{ min_price }}">
+      <span class="input-group-text">–</span>
+      <input id="max_price" type="number" min="0" step="any" name="max_price" class="form-control" placeholder="Max" value="{{ max_price }}" aria-label="Maximum price">
+    </div>
+  </div>
+  <div class="filter-field">
+    <label for="sort" class="form-label">Sort by</label>
+    <select id="sort" name="sort" class="form-select" onchange="this.form.submit()">
+      {% for value, label in sorts %}
+        <option value="{{ value }}" {% if value == selected_sort %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="filter-actions">
+    <button class="btn btn-auth btn-auth-primary" type="submit">Apply</button>
+    {% if query or selected_category or selected_campus or min_price or max_price %}
+      <a class="btn btn-auth btn-outline-secondary" href="{% url 'listings:home' %}">Clear</a>
     {% endif %}
   </div>
 </form>
