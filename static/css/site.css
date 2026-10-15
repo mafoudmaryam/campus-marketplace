@@ -989,3 +989,63 @@ h1, h2, h3, h4, h5 { color: #111827; font-weight: 700; }
   .gallery-slide, .gallery-thumb, .gallery-arrow, .mini-card, .product-seller, .icon-btn { transition: none; }
   .mini-card:hover { transform: none; }
 }
+
+/* ---------- motion: things react when you touch them ---------- */
+/* ripple from where you tap (added by static/js/motion.js) */
+.has-ripple { position: relative; overflow: hidden; }
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .22;
+  transform: scale(0);
+  pointer-events: none;
+  animation: ripple .6s ease-out forwards;
+}
+@keyframes ripple { to { transform: scale(1); opacity: 0; } }
+
+/* buttons press in a little */
+.btn, .btn-message, .wechat-btn, .wechat-login, .chip, .icon-btn, .gallery-thumb, .seller-link, .gallery-expand, .gallery-arrow, .user-toggle {
+  transition: color .15s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease, opacity .2s ease, transform .15s ease, scale .12s ease;
+}
+.btn:active, .btn-message:active, .wechat-btn:active, .wechat-login:active, .chip:active, .icon-btn:active,
+.gallery-thumb:active, .seller-link:active, .gallery-expand:active, .gallery-arrow:active, .user-toggle:active { scale: .95; }
+.btn-sell:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(249, 115, 22, .35); }
+.btn-message:hover, .wechat-login:hover { box-shadow: 0 8px 18px rgba(37, 99, 235, .15); }
+
+/* the logo cap tips when you point at it */
+.site-nav .brand .icon { transition: transform .3s ease; }
+.site-nav .brand:hover .icon { transform: rotate(-12deg) scale(1.08); }
+
+/* cards lift, their photos zoom gently, and they sink a little when pressed */
+.listing-card, .mini-card, .product-seller { transition: transform .25s ease, box-shadow .25s ease, border-color .15s ease, background .15s ease, scale .12s ease; }
+.listing-card:active, .mini-card:active, .product-seller:active { scale: .98; }
+.listing-photo, .mini-photo { overflow: hidden; }
+.listing-photo img, .mini-photo img { transition: transform .6s cubic-bezier(.2, .7, .2, 1); }
+.listing-card:hover .listing-photo img, .mini-card:hover .mini-photo img { transform: scale(1.07); }
+
+/* listing page: the new photo eases in, the WeChat button glows to invite a tap */
+.gallery-slide .gallery-photo { transform: scale(.96); transition: transform .5s cubic-bezier(.2, .7, .2, 1); }
+.gallery-slide.is-active .gallery-photo { transform: scale(1); }
+.action-wechat .wechat-btn, .wechat-login { animation: tap-me 2.2s ease-out 1.2s 3; }
+@keyframes tap-me {
+  0% { box-shadow: 0 0 0 0 rgba(7, 193, 96, .5); }
+  70% { box-shadow: 0 0 0 14px rgba(7, 193, 96, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(7, 193, 96, 0); }
+}
+.step-icon { transition: transform .3s ease, background .3s ease, color .3s ease; }
+.steps li:hover .step-icon { transform: translateY(-3px) rotate(-6deg); background: var(--brand-blue); color: #fff; }
+
+/* slide in on scroll */
+.will-reveal { opacity: 0; transform: translateY(22px); }
+.will-reveal.is-revealed { opacity: 1; transform: none; transition: opacity .55s ease, transform .55s cubic-bezier(.2, .7, .2, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:active, .btn-message:active, .wechat-btn:active, .wechat-login:active, .chip:active, .icon-btn:active,
+  .gallery-thumb:active, .seller-link:active, .gallery-expand:active, .gallery-arrow:active, .user-toggle:active,
+  .listing-card:active, .mini-card:active, .product-seller:active { scale: none; }
+  .btn-sell:hover, .site-nav .brand:hover .icon, .steps li:hover .step-icon,
+  .listing-card:hover .listing-photo img, .mini-card:hover .mini-photo img { transform: none; }
+  .gallery-slide .gallery-photo { transform: none; transition: none; }
+  .action-wechat .wechat-btn, .wechat-login { animation: none; }
+}
