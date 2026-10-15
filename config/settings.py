@@ -2,18 +2,27 @@
 Django settings for the Campus Marketplace project.
 """
 
+import os
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 # The folder that holds manage.py
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Test-only key for your own computer. We replace it with a secret one on Day 7.
-SECRET_KEY = "django-insecure-dev-key-only-for-testing-change-me-on-day-7"
+# Read the secret settings from the .env file (see .env.example)
+load_dotenv(BASE_DIR / ".env")
+
+# The secret key lives in .env, never in the code.
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise ImproperlyConfigured("SECRET_KEY is missing. Copy .env.example to .env and fill it in.")
 
 # True = helpful error pages while you build. Must be False on a real website.
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "").split(",") if host.strip()]
 
 
 # The guest list of rooms (apps)
