@@ -1,10 +1,12 @@
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Q
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import ListingForm
-from .models import Listing
+from .models import Category, Listing
 
 
 def home(request):
@@ -13,7 +15,32 @@ def home(request):
         .select_related("category", "seller")
         .prefetch_related("images")
     )
-    return render(request, "listings/home.html", {"listings": listings})
+
+    query = request.GET.get("q", "").strip()
+    category = request.GET.get("category", "")
+    campus = request.GET.get("campus", "")
+    if query:
+        listings = listings.filter(Q(title__icontains=query) | Q(description__icontains=query))
+    if category:
+        listings = listings.filter(category__slug=category)
+    if campus in Listing.Campus.values:
+        listings = listings.filter(campus=campus)
+
+    page = Paginator(listings, 12).get_page(request.GET.get("page"))
+    # keep the search and filters in the page links
+    params = request.GET.copy()
+    params.pop("page", None)
+    context = {
+        "listings": page,
+        "page": page,
+        "categories": Category.objects.all(),
+        "campuses": Listing.Campus.choices,
+        "query": query,
+        "selected_category": category,
+        "selected_campus": campus,
+        "querystring": params.urlencode(),
+    }
+    return render(request, "listings/home.html", context)
 
 
 def detail(request, pk):

@@ -40,6 +40,11 @@ class Listing(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "-created_at"], name="listing_status_created_idx"),
+            models.Index(fields=["campus"], name="listing_campus_idx"),
+            models.Index(fields=["title"], name="listing_title_idx"),
+        ]
 
     def __str__(self):
         return self.title

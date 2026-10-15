@@ -1,7 +1,34 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1 class="h3 mb-4">Latest items</h1>
+<h1 class="h3 mb-3">Latest items</h1>
+
+<form method="get" class="row g-2 mb-4">
+  <input type="hidden" name="q" value="{{ query }}">
+  <div class="col-sm-4 col-md-3">
+    <select name="category" class="form-select" onchange="this.form.submit()">
+      <option value="">All categories</option>
+      {% for category in categories %}
+        <option value="{{ category.slug }}" {% if category.slug == selected_category %}selected{% endif %}>{{ category.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-4 col-md-3">
+    <select name="campus" class="form-select" onchange="this.form.submit()">
+      <option value="">All campuses</option>
+      {% for value, label in campuses %}
+        <option value="{{ value }}" {% if value == selected_campus %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto">
+    <noscript><button class="btn btn-primary" type="submit">Filter</button></noscript>
+    {% if query or selected_category or selected_campus %}
+      <a class="btn btn-outline-secondary" href="{% url 'listings:home' %}">Clear</a>
+    {% endif %}
+  </div>
+</form>
+{% if query %}<p class="text-muted">Results for "{{ query }}"</p>{% endif %}
 
 <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
   {% for listing in listings %}
@@ -27,7 +54,21 @@
       </div>
     </div>
   {% empty %}
-    <p class="text-muted">No items yet. Add some in the admin page!</p>
+    <p class="text-muted">No items found.</p>
   {% endfor %}
 </div>
+
+{% if page.has_other_pages %}
+  <nav class="mt-4" aria-label="Pages">
+    <ul class="pagination justify-content-center">
+      {% if page.has_previous %}
+        <li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page.previous_page_number }}">Previous</a></li>
+      {% endif %}
+      <li class="page-item disabled"><span class="page-link">Page {{ page.number }} of {{ page.paginator.num_pages }}</span></li>
+      {% if page.has_next %}
+        <li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page.next_page_number }}">Next</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
 {% endblock %}
