@@ -379,3 +379,18 @@ h1, h2, h3, h4, h5 { color: #111827; font-weight: 700; }
 .bubble { display: inline-block; padding: .5rem .9rem; border-radius: 1rem; max-width: 85%; text-align: left; }
 .bubble-mine { background: var(--brand-blue); color: #fff; }
 .bubble-theirs { background: #eef2f7; color: var(--ink); }
+
+/* ---------- WeChat contact ---------- */
+.wechat-id-box {
+  background: #f0fdf4;
+  border: 2px dashed #86efac;
+  border-radius: .75rem;
+  padding: .75rem 1rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-align: center;
+  word-break: break-all;
+  user-select: all;
+}
+.wechat-qr { max-width: 200px; width: 100%; border-radius: .75rem; border: 1px solid var(--line); }

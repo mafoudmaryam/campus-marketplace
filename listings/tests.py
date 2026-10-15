@@ -235,3 +235,56 @@ class BrowseTests(ListingTestBase):
             self.make_listing(f"Item {i}", price=10 + i)
         response = self.client.get(reverse("listings:home"), {"min_price": "10", "sort": "price_asc"})
         self.assertContains(response, "min_price=10&amp;sort=price_asc&page=2")
+
+
+class WechatContactTests(ListingTestBase):
+    def setUp(self):
+        super().setUp()
+        self.media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media, ignore_errors=True)
+        self.url = reverse("listings:detail", args=[self.listing.pk])
+
+    def set_wechat(self, wechat_id="seller_wx", qr=False):
+        profile = self.seller.profile
+        profile.wechat_id = wechat_id
+        if qr:
+            with override_settings(MEDIA_ROOT=self.media):
+                profile.wechat_qr = make_photo("qr.png")
+                profile.save()
+        else:
+            profile.save()
+
+    def get(self):
+        with override_settings(MEDIA_ROOT=self.media):
+            return self.client.get(self.url)
+
+    def test_anonymous_user_sees_login_prompt_not_wechat_id(self):
+        self.set_wechat()
+        response = self.get()
+        self.assertContains(response, "Log in</a> to see how to contact the seller")
+        self.assertNotContains(response, "seller_wx")
+        self.assertNotContains(response, "Contact the seller on WeChat")
+
+    def test_logged_in_user_sees_wechat_card(self):
+        self.set_wechat()
+        self.client.login(username="other", password="pass12345")
+        response = self.get()
+        self.assertContains(response, "Contact the seller on WeChat")
+        self.assertContains(response, "seller_wx")
+        self.assertContains(response, "Copy WeChat ID")
+        self.assertContains(response, "Message seller")
+        self.assertNotContains(response, "Or scan this QR code")
+
+    def test_qr_code_is_shown_when_uploaded(self):
+        self.set_wechat(wechat_id="", qr=True)
+        self.client.login(username="other", password="pass12345")
+        response = self.get()
+        self.assertContains(response, "Or scan this QR code in WeChat")
+        self.assertContains(response, "wechat_qr/")
+        self.assertNotContains(response, "Copy WeChat ID")
+
+    def test_card_hidden_when_seller_has_no_wechat_info(self):
+        self.client.login(username="other", password="pass12345")
+        response = self.get()
+        self.assertNotContains(response, "Contact the seller on WeChat")
+        self.assertContains(response, "Message seller")

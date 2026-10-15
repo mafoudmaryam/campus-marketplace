@@ -8,6 +8,8 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from accounts.models import Profile
+
 from .forms import ListingForm
 from .models import Category, Listing
 
@@ -98,7 +100,8 @@ def detail(request, pk):
         Listing.objects.select_related("category", "seller").prefetch_related("images"),
         pk=pk,
     )
-    return render(request, "listings/detail.html", {"listing": listing})
+    seller_profile, _ = Profile.objects.get_or_create(user=listing.seller)
+    return render(request, "listings/detail.html", {"listing": listing, "seller_profile": seller_profile})
 
 
 @login_required

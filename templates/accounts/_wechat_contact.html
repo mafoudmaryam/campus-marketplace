@@ -1,0 +1,44 @@
+<div class="wechat-card">
+  {% if profile.wechat_id %}
+    <div class="wechat-id-box" id="wechat-id">{{ profile.wechat_id }}</div>
+    <button type="button" class="btn btn-primary btn-sm mt-2" id="copy-wechat" data-copy="{{ profile.wechat_id }}">Copy WeChat ID</button>
+    <p class="small text-muted mt-2 mb-0">Open WeChat &gt; Contacts &gt; Add Contacts, paste the ID, and say which item you want</p>
+  {% endif %}
+  {% if profile.wechat_qr %}
+    <div class="{% if profile.wechat_id %}mt-3 {% endif %}text-center">
+      <p class="small text-muted mb-2">Or scan this QR code in WeChat</p>
+      <img src="{{ profile.wechat_qr.url }}" alt="WeChat QR code" class="wechat-qr">
+    </div>
+  {% endif %}
+</div>
+{% if profile.wechat_id %}
+<script>
+  (function () {
+    var button = document.getElementById('copy-wechat');
+    var timer = null;
+    function done() {
+      button.textContent = 'Copied!';
+      clearTimeout(timer);
+      timer = setTimeout(function () { button.textContent = 'Copy WeChat ID'; }, 2000);
+    }
+    function fallback(text) {
+      var area = document.createElement('textarea');
+      area.value = text;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      document.body.removeChild(area);
+    }
+    button.addEventListener('click', function () {
+      var text = button.getAttribute('data-copy');
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done, function () { fallback(text); });
+      } else {
+        fallback(text);
+      }
+    });
+  })();
+</script>
+{% endif %}
