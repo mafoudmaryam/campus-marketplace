@@ -13,6 +13,7 @@ class Profile(models.Model):
     campus = models.CharField(max_length=10, choices=Campus.choices, default=Campus.WANGJIANG)
     wechat_id = models.CharField(max_length=50, blank=True)
     avatar = models.ImageField(upload_to="avatars/", blank=True)
+    wechat_qr = models.ImageField(upload_to="wechat_qr/", blank=True)
 
     def __str__(self):
         return self.display_name or self.user.username
