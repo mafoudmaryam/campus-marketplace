@@ -19,11 +19,18 @@
     {% with photos=listing.images.all %}
     <div class="gallery-stage" id="gallery-stage"{% if photos|length > 1 %} tabindex="0" aria-roledescription="carousel"{% endif %}>
       {% for photo in photos %}
-        <img src="{{ photo.image.url }}" class="gallery-slide{% if forloop.first %} is-active{% endif %}" alt="{{ listing.title }} photo {{ forloop.counter }}" data-index="{{ forloop.counter0 }}"{% if not forloop.first %} loading="lazy"{% endif %}>
+        {# the same photo, blurred, fills the frame so tall or wide photos are never cut off #}
+        <div class="gallery-slide{% if forloop.first %} is-active{% endif %}">
+          <img src="{{ photo.image.url }}" class="gallery-backdrop" alt="" aria-hidden="true"{% if not forloop.first %} loading="lazy"{% endif %}>
+          <img src="{{ photo.image.url }}" class="gallery-photo" alt="{{ listing.title }} photo {{ forloop.counter }}"{% if not forloop.first %} loading="lazy"{% endif %}>
+        </div>
       {% empty %}
         <div class="gallery-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg>
-          No photo
+          <span class="gallery-empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+          </span>
+          <strong>No photos yet</strong>
+          <span>The seller hasn't added a photo of this item.</span>
         </div>
       {% endfor %}
 
@@ -47,6 +54,17 @@
             <img src="{{ photo.image.url }}" alt="" loading="lazy">
           </button>
         {% endfor %}
+      </div>
+    {% elif photos %}
+      <div class="gallery-single">
+        <span class="gallery-single-text">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+          1 photo
+        </span>
+        <button type="button" class="gallery-single-btn" id="gallery-zoom">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+          View full size
+        </button>
       </div>
     {% endif %}
 
@@ -270,8 +288,9 @@
       var label = (current + 1) + '/' + total;
       if (counter) { counter.textContent = label; }
       if (lightboxCounter) { lightboxCounter.textContent = label; }
-      lightboxImg.src = slides[current].src;
-      lightboxImg.alt = slides[current].alt;
+      var photo = slides[current].querySelector('.gallery-photo');
+      lightboxImg.src = photo.src;
+      lightboxImg.alt = photo.alt;
     }
     function openLightbox() {
       if (lightbox.showModal) { lightbox.showModal(); } else { lightbox.setAttribute('open', ''); }
@@ -289,6 +308,7 @@
     on('lightbox-prev', function () { show(current - 1); });
     on('lightbox-next', function () { show(current + 1); });
     on('lightbox-close', closeLightbox);
+    on('gallery-zoom', openLightbox);
     for (var t = 0; t < thumbs.length; t++) {
       thumbs[t].addEventListener('click', function () { show(Number(this.getAttribute('data-index'))); });
     }

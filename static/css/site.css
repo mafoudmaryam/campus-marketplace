@@ -622,24 +622,84 @@ h1, h2, h3, h4, h5 { color: #111827; font-weight: 700; }
 .gallery-slide {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  overflow: hidden;
   opacity: 0;
   cursor: zoom-in;
   transition: opacity .35s ease;
 }
 .gallery-slide.is-active { opacity: 1; z-index: 1; }
+.gallery-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(28px) brightness(.85) saturate(1.1);
+  transform: scale(1.2);
+}
+.gallery-photo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
 .gallery-empty {
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: .5rem;
+  gap: .35rem;
+  padding: 1rem;
+  text-align: center;
   color: var(--muted);
+  background: linear-gradient(135deg, #eaf2ff 0%, #f1f6fd 50%, #e6f6f4 100%);
 }
-.gallery-empty svg { width: 56px; height: 56px; }
+.gallery-empty-icon {
+  width: 84px;
+  height: 84px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: .5rem;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--brand-blue);
+  box-shadow: 0 6px 18px rgba(30, 64, 120, .1);
+}
+.gallery-empty-icon svg { width: 40px; height: 40px; }
+.gallery-empty strong { color: #0f2a4a; font-size: 1.1rem; }
+.gallery-empty span:last-child { font-size: .9rem; }
+
+/* one photo: a slim bar instead of a row of thumbnails */
+.gallery-single {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: .9rem;
+  padding: .6rem .6rem .6rem 1rem;
+  background: #fff;
+  border: 1px solid #e8eef6;
+  border-radius: .75rem;
+  box-shadow: 0 4px 14px rgba(30, 64, 120, .05);
+}
+.gallery-single-text { display: inline-flex; align-items: center; gap: .45rem; color: var(--muted); font-size: .9rem; }
+.gallery-single-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .45rem .9rem;
+  border: 0;
+  border-radius: .55rem;
+  background: #eaf2ff;
+  color: var(--brand-blue-dark);
+  font-size: .9rem;
+  font-weight: 600;
+  transition: background .15s ease;
+}
+.gallery-single-btn:hover { background: #dbe7fb; }
 
 .status-pill {
   position: absolute;
@@ -931,7 +991,7 @@ a.seller-name:hover { color: var(--brand-blue-dark); text-decoration: underline;
 
 @media (prefers-reduced-motion: reduce) {
   .reveal, .reveal-fade, .lightbox[open] { animation: none; }
-  .gallery-slide, .gallery-thumb, .gallery-arrow, .mini-card { transition: none; }
+  .gallery-slide, .gallery-thumb, .gallery-arrow, .mini-card, .gallery-single-btn { transition: none; }
   .gallery-arrow:hover { transform: translateY(-50%); }
   .mini-card:hover { transform: none; }
 }
