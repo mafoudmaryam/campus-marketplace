@@ -1,5 +1,7 @@
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from .forms import ListingForm
 from .models import Listing
@@ -36,3 +38,42 @@ def create(request):
     else:
         form = ListingForm()
     return render(request, "listings/form.html", {"form": form, "heading": "Sell an item"})
+
+
+
+def get_own_listing(request, pk):
+    """Find a listing and make sure the logged-in user is the seller."""
+    listing = get_object_or_404(Listing, pk=pk)
+    if listing.seller != request.user:
+        raise PermissionDenied
+    return listing
+
+
+@login_required
+def edit(request, pk):
+    listing = get_own_listing(request, pk)
+    if request.method == "POST":
+        form = ListingForm(request.POST, request.FILES, instance=listing)
+        if form.is_valid():
+            form.save()
+            return redirect("listings:detail", pk=listing.pk)
+    else:
+        form = ListingForm(instance=listing)
+    return render(request, "listings/form.html", {"form": form, "heading": "Edit your listing"})
+
+
+@login_required
+@require_POST
+def delete(request, pk):
+    listing = get_own_listing(request, pk)
+    listing.delete()
+    return redirect("listings:home")
+
+
+@login_required
+@require_POST
+def mark_sold(request, pk):
+    listing = get_own_listing(request, pk)
+    listing.status = Listing.Status.SOLD
+    listing.save()
+    return redirect("listings:detail", pk=listing.pk)
