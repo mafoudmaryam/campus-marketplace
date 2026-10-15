@@ -59,8 +59,7 @@
     {% else %}
       {% if user.is_authenticated %}
         {% if seller_profile.wechat_id or seller_profile.wechat_qr %}
-          {% include "accounts/_wechat_bar.html" with profile=seller_profile sticky=True %}
-          <div class="wechat-bar-spacer"></div>
+          {% include "accounts/_wechat_bar.html" with profile=seller_profile seller=listing.seller sticky=True %}
         {% endif %}
       {% else %}
         <div class="alert alert-info">
@@ -69,8 +68,12 @@
       {% endif %}
       <form method="post" action="{% url 'messaging:start' listing.pk %}">
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary btn-lg w-100">Message seller</button>
+        <button type="submit" class="btn-message">Message seller</button>
       </form>
+      <p class="safety-note">Meet on campus and check the item before you pay.</p>
+      {% if user.is_authenticated and seller_profile.wechat_id or user.is_authenticated and seller_profile.wechat_qr %}
+        <div class="wechat-bar-spacer"></div>
+      {% endif %}
     {% endif %}
   </div>
 </div>

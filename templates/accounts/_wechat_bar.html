@@ -1,33 +1,55 @@
-<div class="wechat-bar{% if sticky %} wechat-bar-sticky{% endif %}" id="wechat-bar">
-  <div class="wechat-bar-inner">
+{% if seller %}
+  <div class="seller-card">
+    {% if profile.avatar %}
+      <img class="avatar avatar-md" src="{{ profile.avatar.url }}" alt="">
+    {% else %}
+      <span class="avatar avatar-md" aria-hidden="true">{{ seller.username|first|upper }}</span>
+    {% endif %}
+    <div>
+      <div class="seller-name">{{ profile.display_name|default:seller.username }}</div>
+      <div class="seller-sub">{{ profile.get_campus_display }} campus · Usually replies on WeChat</div>
+    </div>
+  </div>
+{% endif %}
+
+<div class="wechat-action{% if sticky %} wechat-action-sticky{% endif %}">
+  <div class="wechat-msg" id="wechat-msg" role="status" aria-live="polite" hidden></div>
+  <button type="button" class="wechat-btn" id="wechat-chat" data-wechat-id="{{ profile.wechat_id }}">
     <svg class="wechat-logo" viewBox="0 0 24 24" aria-hidden="true">
       <path fill="currentColor" d="M9.5 3C5.4 3 2 5.8 2 9.3c0 2 1.1 3.7 2.8 4.9l-.7 2.1 2.5-1.3c.8.2 1.6.3 2.4.3h.5a5.5 5.5 0 0 1-.3-1.7c0-3.2 3-5.8 6.6-5.8h.5C16.1 4.9 13.1 3 9.5 3z"/>
       <path fill="currentColor" d="M22 14.7c0-2.8-2.7-5-6-5s-6 2.2-6 5 2.7 5 6 5c.7 0 1.4-.1 2-.3l2 1.1-.6-1.8c1.5-.9 2.6-2.4 2.6-4z"/>
       <circle cx="7" cy="8.2" r=".9" fill="#07C160"/><circle cx="12" cy="8.2" r=".9" fill="#07C160"/>
       <circle cx="14.2" cy="14" r=".8" fill="#07C160"/><circle cx="18" cy="14" r=".8" fill="#07C160"/>
     </svg>
-    <button type="button" class="wechat-btn" id="wechat-chat" data-wechat-id="{{ profile.wechat_id }}">Chat on WeChat</button>
-    {% if profile.wechat_qr %}
-      <button type="button" class="wechat-qr-thumb" id="wechat-qr-open" aria-label="Enlarge WeChat QR code">
-        <img src="{{ profile.wechat_qr.url }}" alt="WeChat QR code">
-        <span>Scan with WeChat</span>
-      </button>
-    {% endif %}
-  </div>
-  <div class="wechat-msg" id="wechat-msg" role="status" aria-live="polite" hidden></div>
+    <span>Chat on WeChat</span>
+  </button>
 </div>
+{% if profile.wechat_qr %}
+  <button type="button" class="wechat-qr-link" id="wechat-qr-open">Scan with WeChat instead</button>
+{% endif %}
 
-<dialog class="wechat-dialog" id="wechat-popup">
-  <h2 class="h6">Chat with the seller on WeChat</h2>
+<dialog class="wechat-dialog" id="wechat-popup" aria-labelledby="wechat-popup-title">
+  <button type="button" class="wechat-close" id="wechat-close" aria-label="Close">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+  </button>
+  <h2 class="wechat-popup-title" id="wechat-popup-title">Chat on WeChat</h2>
   {% if profile.wechat_id %}
-    <div class="wechat-id-box">{{ profile.wechat_id }}</div>
-    <p class="small text-muted mt-2">Paste this ID in WeChat &gt; Contacts &gt; Add Contacts</p>
+    <div class="wechat-id-row">
+      <div class="wechat-id-box">{{ profile.wechat_id }}</div>
+      <button type="button" class="wechat-copy" id="wechat-copy" data-wechat-id="{{ profile.wechat_id }}">Copy ID</button>
+    </div>
   {% endif %}
   {% if profile.wechat_qr %}
-    <p class="small text-muted mb-2">Scan with WeChat</p>
-    <img src="{{ profile.wechat_qr.url }}" alt="WeChat QR code" class="wechat-qr-big">
+    <div class="wechat-qr-wrap">
+      <img src="{{ profile.wechat_qr.url }}" alt="WeChat QR code" class="wechat-qr-big">
+      <div class="small text-muted mt-1">Scan with WeChat</div>
+    </div>
   {% endif %}
-  <form method="dialog"><button class="btn btn-outline-secondary btn-sm mt-3">Close</button></form>
+  <ol class="wechat-steps">
+    <li>Open WeChat</li>
+    <li>Contacts &gt; Add Contacts</li>
+    <li>Paste the ID</li>
+  </ol>
 </dialog>
 
 <script>
@@ -36,7 +58,9 @@
     var msg = document.getElementById('wechat-msg');
     var popup = document.getElementById('wechat-popup');
     var qrOpen = document.getElementById('wechat-qr-open');
+    var copyBtn = document.getElementById('wechat-copy');
     var timer = null;
+    var copyTimer = null;
     var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     function show(text) {
@@ -47,6 +71,9 @@
     }
     function openDialog() {
       if (popup.showModal) { popup.showModal(); } else { popup.setAttribute('open', ''); }
+    }
+    function closeDialog() {
+      if (popup.close) { popup.close(); } else { popup.removeAttribute('open'); }
     }
     function copy(text, ok, fail) {
       function fallback() {
@@ -81,9 +108,19 @@
       }, openDialog);
     });
 
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function () {
+        copy(copyBtn.getAttribute('data-wechat-id'), function () {
+          copyBtn.textContent = 'Copied!';
+          clearTimeout(copyTimer);
+          copyTimer = setTimeout(function () { copyBtn.textContent = 'Copy ID'; }, 2000);
+        }, function () {});
+      });
+    }
     if (qrOpen) { qrOpen.addEventListener('click', openDialog); }
+    document.getElementById('wechat-close').addEventListener('click', closeDialog);
     popup.addEventListener('click', function (event) {
-      if (event.target === popup) { popup.close(); }
+      if (event.target === popup) { closeDialog(); }
     });
   })();
 </script>
