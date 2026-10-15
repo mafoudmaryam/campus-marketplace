@@ -1,0 +1,89 @@
+<div class="wechat-bar{% if sticky %} wechat-bar-sticky{% endif %}" id="wechat-bar">
+  <div class="wechat-bar-inner">
+    <svg class="wechat-logo" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M9.5 3C5.4 3 2 5.8 2 9.3c0 2 1.1 3.7 2.8 4.9l-.7 2.1 2.5-1.3c.8.2 1.6.3 2.4.3h.5a5.5 5.5 0 0 1-.3-1.7c0-3.2 3-5.8 6.6-5.8h.5C16.1 4.9 13.1 3 9.5 3z"/>
+      <path fill="currentColor" d="M22 14.7c0-2.8-2.7-5-6-5s-6 2.2-6 5 2.7 5 6 5c.7 0 1.4-.1 2-.3l2 1.1-.6-1.8c1.5-.9 2.6-2.4 2.6-4z"/>
+      <circle cx="7" cy="8.2" r=".9" fill="#07C160"/><circle cx="12" cy="8.2" r=".9" fill="#07C160"/>
+      <circle cx="14.2" cy="14" r=".8" fill="#07C160"/><circle cx="18" cy="14" r=".8" fill="#07C160"/>
+    </svg>
+    <button type="button" class="wechat-btn" id="wechat-chat" data-wechat-id="{{ profile.wechat_id }}">Chat on WeChat</button>
+    {% if profile.wechat_qr %}
+      <button type="button" class="wechat-qr-thumb" id="wechat-qr-open" aria-label="Enlarge WeChat QR code">
+        <img src="{{ profile.wechat_qr.url }}" alt="WeChat QR code">
+        <span>Scan with WeChat</span>
+      </button>
+    {% endif %}
+  </div>
+  <div class="wechat-msg" id="wechat-msg" role="status" aria-live="polite" hidden></div>
+</div>
+
+<dialog class="wechat-dialog" id="wechat-popup">
+  <h2 class="h6">Chat with the seller on WeChat</h2>
+  {% if profile.wechat_id %}
+    <div class="wechat-id-box">{{ profile.wechat_id }}</div>
+    <p class="small text-muted mt-2">Paste this ID in WeChat &gt; Contacts &gt; Add Contacts</p>
+  {% endif %}
+  {% if profile.wechat_qr %}
+    <p class="small text-muted mb-2">Scan with WeChat</p>
+    <img src="{{ profile.wechat_qr.url }}" alt="WeChat QR code" class="wechat-qr-big">
+  {% endif %}
+  <form method="dialog"><button class="btn btn-outline-secondary btn-sm mt-3">Close</button></form>
+</dialog>
+
+<script>
+  (function () {
+    var chat = document.getElementById('wechat-chat');
+    var msg = document.getElementById('wechat-msg');
+    var popup = document.getElementById('wechat-popup');
+    var qrOpen = document.getElementById('wechat-qr-open');
+    var timer = null;
+    var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    function show(text) {
+      msg.textContent = text;
+      msg.hidden = false;
+      clearTimeout(timer);
+      timer = setTimeout(function () { msg.hidden = true; }, 8000);
+    }
+    function openDialog() {
+      if (popup.showModal) { popup.showModal(); } else { popup.setAttribute('open', ''); }
+    }
+    function copy(text, ok, fail) {
+      function fallback() {
+        var area = document.createElement('textarea');
+        area.value = text;
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        var done = false;
+        try { done = document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(area);
+        if (done) { ok(); } else { fail(); }
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(ok, fallback);
+      } else {
+        fallback();
+      }
+    }
+
+    chat.addEventListener('click', function () {
+      var id = chat.getAttribute('data-wechat-id');
+      if (!id) { openDialog(); return; }
+      copy(id, function () {
+        if (isMobile) {
+          show('ID copied! Paste it in WeChat > Contacts > Add Contacts');
+          setTimeout(function () { window.location.href = 'weixin://'; }, 600);
+        } else {
+          openDialog();
+        }
+      }, openDialog);
+    });
+
+    if (qrOpen) { qrOpen.addEventListener('click', openDialog); }
+    popup.addEventListener('click', function (event) {
+      if (event.target === popup) { popup.close(); }
+    });
+  })();
+</script>

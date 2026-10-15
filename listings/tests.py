@@ -261,32 +261,32 @@ class WechatContactTests(ListingTestBase):
     def test_anonymous_user_sees_login_prompt_not_wechat_id(self):
         self.set_wechat()
         response = self.get()
-        self.assertContains(response, "Log in</a> to see how to contact the seller")
+        self.assertContains(response, "Log in</a> to chat with the seller on WeChat")
         self.assertNotContains(response, "seller_wx")
-        self.assertNotContains(response, "Contact the seller on WeChat")
+        self.assertNotContains(response, "Chat on WeChat")
 
     def test_logged_in_user_sees_wechat_card(self):
         self.set_wechat()
         self.client.login(username="other", password="pass12345")
         response = self.get()
-        self.assertContains(response, "Contact the seller on WeChat")
+        self.assertContains(response, "Chat on WeChat")
         self.assertContains(response, "seller_wx")
-        self.assertContains(response, "Copy WeChat ID")
+        self.assertContains(response, 'data-wechat-id="seller_wx"')
         self.assertContains(response, "Message seller")
-        self.assertNotContains(response, "Or scan this QR code")
+        self.assertNotContains(response, "Scan with WeChat")
 
     def test_qr_code_is_shown_when_uploaded(self):
         self.set_wechat(wechat_id="", qr=True)
         self.client.login(username="other", password="pass12345")
         response = self.get()
-        self.assertContains(response, "Or scan this QR code in WeChat")
+        self.assertContains(response, "Scan with WeChat")
         self.assertContains(response, "wechat_qr/")
-        self.assertNotContains(response, "Copy WeChat ID")
+        self.assertNotContains(response, "seller_wx")
 
     def test_card_hidden_when_seller_has_no_wechat_info(self):
         self.client.login(username="other", password="pass12345")
         response = self.get()
-        self.assertNotContains(response, "Contact the seller on WeChat")
+        self.assertNotContains(response, "Chat on WeChat")
         self.assertContains(response, "Message seller")
 
     def test_sell_page_nudges_seller_without_wechat(self):
@@ -305,3 +305,17 @@ class WechatContactTests(ListingTestBase):
         self.client.login(username="seller", password="pass12345")
         response = self.client.get(reverse("listings:edit", args=[self.listing.pk]))
         self.assertNotContains(response, "Add your WeChat so buyers can contact you")
+
+
+    def test_bar_is_green_sticky_and_has_app_link_and_copy_script(self):
+        self.set_wechat()
+        self.client.login(username="other", password="pass12345")
+        response = self.get()
+        self.assertContains(response, "wechat-bar wechat-bar-sticky")
+        self.assertContains(response, "ID copied! Paste it in WeChat > Contacts > Add Contacts")
+        self.assertContains(response, "weixin://")
+
+    def test_seller_does_not_see_bar_on_own_listing(self):
+        self.set_wechat()
+        self.client.login(username="seller", password="pass12345")
+        self.assertNotContains(self.get(), "Chat on WeChat")

@@ -59,16 +59,12 @@
     {% else %}
       {% if user.is_authenticated %}
         {% if seller_profile.wechat_id or seller_profile.wechat_qr %}
-          <div class="card mb-3">
-            <div class="card-body">
-              <h2 class="h6 mb-3">Contact the seller on WeChat</h2>
-              {% include "accounts/_wechat_contact.html" with profile=seller_profile %}
-            </div>
-          </div>
+          {% include "accounts/_wechat_bar.html" with profile=seller_profile sticky=True %}
+          <div class="wechat-bar-spacer"></div>
         {% endif %}
       {% else %}
         <div class="alert alert-info">
-          <a href="{% url 'accounts:login' %}?next={{ request.path }}">Log in</a> to see how to contact the seller
+          <a href="{% url 'accounts:login' %}?next={{ request.path }}">Log in</a> to chat with the seller on WeChat
         </div>
       {% endif %}
       <form method="post" action="{% url 'messaging:start' listing.pk %}">

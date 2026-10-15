@@ -77,5 +77,18 @@ class ProfileWechatTests(TestCase):
         self.client.login(username="viewer", password="pass12345")
         response = self.get()
         self.assertContains(response, "bob_wx")
-        self.assertContains(response, "Copy WeChat ID")
-        self.assertContains(response, "Or scan this QR code in WeChat")
+        self.assertContains(response, "Chat on WeChat")
+        self.assertContains(response, "Scan with WeChat")
+
+    def test_owner_does_not_see_bar_on_own_profile(self):
+        self.client.login(username="bob", password="pass12345")
+        self.assertNotContains(self.get(), "Chat on WeChat")
+
+
+class WechatFormLabelTests(TestCase):
+    def test_wechat_id_label_and_example(self):
+        User.objects.create_user("carol", password="pass12345")
+        self.client.login(username="carol", password="pass12345")
+        response = self.client.get(reverse("accounts:edit_profile"))
+        self.assertContains(response, "WeChat ID (for buyers to add you)")
+        self.assertContains(response, "Find it in WeChat > Me > your name > WeChat ID")

@@ -21,12 +21,9 @@
   </div>
 </div>
 
-{% if user.is_authenticated and profile.wechat_id or user.is_authenticated and profile.wechat_qr %}
-<div class="card mb-4">
-  <div class="card-body">
-    <h2 class="h6 mb-3">Contact on WeChat</h2>
-    {% include "accounts/_wechat_contact.html" %}
-  </div>
+{% if user.is_authenticated and user != owner and profile.wechat_id or user.is_authenticated and user != owner and profile.wechat_qr %}
+<div class="mb-4">
+  {% include "accounts/_wechat_bar.html" %}
 </div>
 {% endif %}
 

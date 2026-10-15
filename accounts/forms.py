@@ -8,8 +8,9 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ["display_name", "campus", "wechat_id", "wechat_qr", "avatar"]
-        labels = {"wechat_qr": "WeChat QR code"}
+        labels = {"wechat_id": "WeChat ID (for buyers to add you)", "wechat_qr": "WeChat QR code"}
         help_texts = {
+            "wechat_id": "Find it in WeChat > Me > your name > WeChat ID",
             "wechat_qr": "Open WeChat > Me > tap your QR code > Save image, then upload it here",
         }
 
