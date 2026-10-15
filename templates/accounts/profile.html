@@ -14,15 +14,21 @@
       <h1 class="h4 mb-1">{{ profile }}</h1>
       <p class="text-muted mb-1">@{{ owner.username }} · {{ profile.get_campus_display }} campus</p>
       {% if user.is_authenticated %}
-        {% if profile.wechat_id %}
-          <p class="mb-0">WeChat: <strong>{{ profile.wechat_id }}</strong></p>
-        {% endif %}
       {% else %}
         <p class="mb-0 small text-muted"><a href="{% url 'accounts:login' %}">Log in</a> to see contact details.</p>
       {% endif %}
     </div>
   </div>
 </div>
+
+{% if user.is_authenticated and profile.wechat_id or user.is_authenticated and profile.wechat_qr %}
+<div class="card mb-4">
+  <div class="card-body">
+    <h2 class="h6 mb-3">Contact on WeChat</h2>
+    {% include "accounts/_wechat_contact.html" %}
+  </div>
+</div>
+{% endif %}
 
 <h2 class="h5 mb-3">Items for sale</h2>
 

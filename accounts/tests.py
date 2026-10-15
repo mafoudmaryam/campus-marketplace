@@ -48,3 +48,34 @@ class WechatQrUploadTests(TestCase):
         self.assertContains(response, "smaller than 2 MB")
         self.user.profile.refresh_from_db()
         self.assertFalse(self.user.profile.wechat_qr)
+
+
+class ProfileWechatTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user("bob", password="pass12345")
+        User.objects.create_user("viewer", password="pass12345")
+        self.media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media, ignore_errors=True)
+        profile = self.owner.profile
+        profile.wechat_id = "bob_wx"
+        with override_settings(MEDIA_ROOT=self.media):
+            profile.wechat_qr = make_qr()
+            profile.save()
+        self.url = reverse("accounts:profile", args=["bob"])
+
+    def get(self):
+        with override_settings(MEDIA_ROOT=self.media):
+            return self.client.get(self.url)
+
+    def test_anonymous_user_does_not_see_wechat(self):
+        response = self.get()
+        self.assertNotContains(response, "bob_wx")
+        self.assertNotContains(response, "wechat_qr/")
+        self.assertContains(response, "to see contact details")
+
+    def test_logged_in_user_sees_id_and_qr(self):
+        self.client.login(username="viewer", password="pass12345")
+        response = self.get()
+        self.assertContains(response, "bob_wx")
+        self.assertContains(response, "Copy WeChat ID")
+        self.assertContains(response, "Or scan this QR code in WeChat")
