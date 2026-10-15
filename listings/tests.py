@@ -368,3 +368,97 @@ class ViewCountTests(ListingTestBase):
         self.client.login(username="seller", password="pass12345")
         self.client.get(reverse("listings:detail", args=[self.listing.pk]))
         self.assertEqual(self.views(), 0)
+
+
+class DetailPageTests(ListingTestBase):
+    def setUp(self):
+        super().setUp()
+        self.media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media, ignore_errors=True)
+        self.url = reverse("listings:detail", args=[self.listing.pk])
+
+    def get(self):
+        with override_settings(MEDIA_ROOT=self.media):
+            return self.client.get(self.url)
+
+    def add_photos(self, count):
+        with override_settings(MEDIA_ROOT=self.media):
+            for i in range(count):
+                ListingImage.objects.create(listing=self.listing, image=make_photo(f"p{i}.png"))
+
+    def test_breadcrumb_links_to_category(self):
+        response = self.get()
+        self.assertContains(response, f'href="{reverse("listings:home")}?category=books"')
+        self.assertContains(response, 'aria-current="page">Calculus book<', html=False)
+
+    def test_status_badge_and_key_details(self):
+        response = self.get()
+        self.assertContains(response, 'class="status-pill status-available">Available<')
+        self.assertContains(response, "Key details")
+        self.assertContains(response, "Pickup location")
+        self.assertContains(response, "Why buy on campus?")
+        self.assertContains(response, "Give items a second life")
+
+    def test_sold_badge(self):
+        self.listing.status = Listing.Status.SOLD
+        self.listing.save()
+        self.assertContains(self.get(), 'class="status-pill status-sold">Sold<')
+
+    def test_no_photo_has_no_arrows(self):
+        response = self.get()
+        self.assertContains(response, "No photo")
+        self.assertNotContains(response, 'id="gallery-next"')
+        self.assertNotContains(response, 'id="lightbox"')
+
+    def test_one_photo_has_no_arrows_or_thumbnails(self):
+        self.add_photos(1)
+        response = self.get()
+        self.assertContains(response, 'class="gallery-slide is-active"')
+        self.assertContains(response, 'id="lightbox"')
+        self.assertNotContains(response, 'id="gallery-next"')
+        self.assertNotContains(response, 'class="gallery-thumb')
+
+    def test_several_photos_get_arrows_counter_and_thumbnails(self):
+        self.add_photos(3)
+        response = self.get()
+        self.assertContains(response, 'id="gallery-next"')
+        self.assertContains(response, ">1/3<")
+        self.assertContains(response, 'aria-label="Show photo', count=3)
+
+    def test_seller_block_shows_item_count(self):
+        self.make_listing("Lamp")
+        self.make_listing("Old sofa", status=Listing.Status.SOLD)
+        response = self.get()
+        self.assertContains(response, "2 items for sale")
+        self.assertContains(response, reverse("accounts:profile", args=["seller"]))
+
+    def test_more_from_seller_shows_up_to_three_other_available_items(self):
+        for title in ["Lamp", "Kettle", "Chair", "Desk"]:
+            self.make_listing(title)
+        self.make_listing("Old sofa", status=Listing.Status.SOLD)
+        Listing.objects.create(seller=self.other, title="Not mine", description="x", category=self.category)
+        response = self.get()
+        self.assertContains(response, "More from this seller")
+        self.assertEqual(len(response.context["more_from_seller"]), 3)
+        self.assertNotIn(self.listing, response.context["more_from_seller"])
+        self.assertNotContains(response, "Old sofa")
+        self.assertNotContains(response, "Not mine")
+
+    def test_more_from_seller_hidden_when_empty(self):
+        self.assertNotContains(self.get(), "More from this seller")
+
+    def test_seller_sees_owner_buttons_not_contact_buttons(self):
+        self.client.login(username="seller", password="pass12345")
+        response = self.get()
+        self.assertContains(response, "Mark as sold")
+        self.assertContains(response, ">Delete<")
+        self.assertNotContains(response, "Message seller")
+
+    def test_page_uses_a_fixed_number_of_queries(self):
+        for title in ["Lamp", "Kettle", "Chair"]:
+            self.make_listing(title)
+        self.add_photos(2)
+        self.client.login(username="other", password="pass12345")
+        self.get()  # warm up the session
+        with self.assertNumQueries(11):
+            self.get()

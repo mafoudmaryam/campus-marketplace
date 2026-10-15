@@ -105,7 +105,19 @@ def detail(request, pk):
         Listing.objects.filter(pk=listing.pk).update(views=F("views") + 1)
         listing.views += 1
     seller_profile, _ = Profile.objects.get_or_create(user=listing.seller)
-    return render(request, "listings/detail.html", {"listing": listing, "seller_profile": seller_profile})
+    seller_listings = Listing.objects.filter(seller=listing.seller, status=Listing.Status.AVAILABLE)
+    more_from_seller = (
+        seller_listings.exclude(pk=listing.pk)
+        .select_related("category")
+        .prefetch_related("images")[:3]
+    )
+    context = {
+        "listing": listing,
+        "seller_profile": seller_profile,
+        "seller_items_count": seller_listings.count(),
+        "more_from_seller": more_from_seller,
+    }
+    return render(request, "listings/detail.html", context)
 
 
 @login_required

@@ -5,45 +5,118 @@
 {% block content %}
 {% for message in messages %}<div class="alert alert-warning">{{ message }}</div>{% endfor %}
 <nav aria-label="breadcrumb">
-  <ol class="breadcrumb">
+  <ol class="breadcrumb detail-breadcrumb">
     <li class="breadcrumb-item"><a href="{% url 'listings:home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'listings:home' %}?category={{ listing.category.slug }}">{{ listing.category.name }}</a></li>
     <li class="breadcrumb-item active" aria-current="page">{{ listing.title }}</li>
   </ol>
 </nav>
 
-<div class="row g-4">
-  <div class="col-lg-7">
-    {% for photo in listing.images.all %}
-      <img src="{{ photo.image.url }}" class="img-fluid detail-photo mb-3" alt="{{ listing.title }} photo {{ forloop.counter }}">
-    {% empty %}
-      <div class="detail-nophoto">No photo</div>
-    {% endfor %}
-  </div>
+<div class="detail-grid">
 
-  <div class="col-lg-5">
-    <h1 class="h3">{{ listing.title }}</h1>
-    <p class="detail-price">
-      {% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}
-    </p>
+  {# ---------- photo gallery ---------- #}
+  <section class="detail-gallery reveal" aria-label="Photos">
+    {% with photos=listing.images.all %}
+    <div class="gallery-stage" id="gallery-stage"{% if photos|length > 1 %} tabindex="0" aria-roledescription="carousel"{% endif %}>
+      {% for photo in photos %}
+        <img src="{{ photo.image.url }}" class="gallery-slide{% if forloop.first %} is-active{% endif %}" alt="{{ listing.title }} photo {{ forloop.counter }}" data-index="{{ forloop.counter0 }}"{% if not forloop.first %} loading="lazy"{% endif %}>
+      {% empty %}
+        <div class="gallery-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg>
+          No photo
+        </div>
+      {% endfor %}
 
-    <p>
+      <span class="status-pill status-{{ listing.status }}">{{ listing.get_status_display }}</span>
+
+      {% if photos|length > 1 %}
+        <button type="button" class="gallery-arrow gallery-prev" id="gallery-prev" aria-label="Previous photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button type="button" class="gallery-arrow gallery-next" id="gallery-next" aria-label="Next photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <span class="gallery-counter" id="gallery-counter" aria-live="polite">1/{{ photos|length }}</span>
+      {% endif %}
+    </div>
+
+    {% if photos|length > 1 %}
+      <div class="gallery-thumbs">
+        {% for photo in photos %}
+          <button type="button" class="gallery-thumb{% if forloop.first %} is-active{% endif %}" data-index="{{ forloop.counter0 }}" aria-label="Show photo {{ forloop.counter }}"{% if forloop.first %} aria-current="true"{% endif %}>
+            <img src="{{ photo.image.url }}" alt="" loading="lazy">
+          </button>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if photos %}
+      <dialog class="lightbox" id="lightbox" aria-label="Photo viewer">
+        <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+        <img class="lightbox-img" id="lightbox-img" src="{{ photos.0.image.url }}" alt="">
+        {% if photos|length > 1 %}
+          <button type="button" class="gallery-arrow gallery-prev" id="lightbox-prev" aria-label="Previous photo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <button type="button" class="gallery-arrow gallery-next" id="lightbox-next" aria-label="Next photo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+          <span class="gallery-counter" id="lightbox-counter">1/{{ photos|length }}</span>
+        {% endif %}
+      </dialog>
+    {% endif %}
+    {% endwith %}
+  </section>
+
+  {# ---------- title, price, description, seller, contact ---------- #}
+  <section class="detail-card detail-main reveal-fade">
+    <h1 class="detail-title">{{ listing.title }}</h1>
+    <p class="detail-price">{% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}</p>
+
+    <div class="detail-tags">
       <span class="category-tag">{{ listing.category.name }}</span>
       <span class="category-tag">{{ listing.get_condition_display }}</span>
-      <span class="category-tag">Pick-up: {{ listing.get_campus_display }}</span>
-      {% if listing.status != "available" %}
-        <span class="badge text-bg-danger">{{ listing.get_status_display }}</span>
-      {% endif %}
-    </p>
+      <span class="category-tag">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        {{ listing.get_campus_display }}
+      </span>
+    </div>
 
-    <h2 class="h6 mt-4">Description</h2>
-    <p>{{ listing.description|linebreaksbr }}</p>
+    <div class="detail-stats">
+      <span class="meta-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        Posted {{ listing.created_at|date:"j M Y" }}
+      </span>
+      <span class="meta-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        Viewed {{ listing.views }} time{{ listing.views|pluralize }}
+      </span>
+    </div>
 
-    <hr>
-    <p class="mb-1"><strong>Seller:</strong> <a href="{% url 'accounts:profile' listing.seller.username %}">{{ listing.seller.username }}</a></p>
-    <p class="text-muted small">Posted {{ listing.created_at|date:"j M Y" }}</p>
+    <h2 class="detail-heading">Description</h2>
+    <p class="detail-description">{{ listing.description|linebreaksbr }}</p>
+
+    <div class="detail-seller">
+      <a href="{% url 'accounts:profile' listing.seller.username %}" class="detail-seller-avatar" tabindex="-1" aria-hidden="true">
+        {% if seller_profile.avatar %}
+          <img class="avatar avatar-md" src="{{ seller_profile.avatar.url }}" alt="">
+        {% else %}
+          <span class="avatar avatar-md">{{ listing.seller.username|first|upper }}</span>
+        {% endif %}
+      </a>
+      <div>
+        <a class="seller-name" href="{% url 'accounts:profile' listing.seller.username %}">{{ seller_profile.display_name|default:listing.seller.username }}</a>
+        <div class="seller-sub">{{ seller_items_count }} item{{ seller_items_count|pluralize }} for sale · {{ seller_profile.get_campus_display }} campus</div>
+        {% if user.is_authenticated and user != listing.seller %}{% if seller_profile.wechat_id or seller_profile.wechat_qr %}
+          <div class="seller-sub">Usually replies on WeChat</div>
+        {% endif %}{% endif %}
+      </div>
+    </div>
 
     {% if user == listing.seller %}
-      <div class="d-flex gap-2">
+      <div class="owner-actions">
         <a class="btn btn-outline-primary" href="{% url 'listings:edit' listing.pk %}">Edit</a>
         {% if listing.status != "sold" %}
           <form method="post" action="{% url 'listings:mark_sold' listing.pk %}">
@@ -57,24 +130,173 @@
         </form>
       </div>
     {% else %}
-      {% if user.is_authenticated %}
-        {% if seller_profile.wechat_id or seller_profile.wechat_qr %}
-          {% include "accounts/_wechat_bar.html" with profile=seller_profile seller=listing.seller sticky=True %}
+      <div class="detail-contact">
+        {% if user.is_authenticated %}
+          {% if seller_profile.wechat_id or seller_profile.wechat_qr %}
+            {% include "accounts/_wechat_bar.html" with profile=seller_profile seller=None sticky=True %}
+          {% endif %}
+        {% else %}
+          <div class="alert alert-info mb-0">
+            <a href="{% url 'accounts:login' %}?next={{ request.path }}">Log in</a> to chat with the seller on WeChat
+          </div>
         {% endif %}
-      {% else %}
-        <div class="alert alert-info">
-          <a href="{% url 'accounts:login' %}?next={{ request.path }}">Log in</a> to chat with the seller on WeChat
-        </div>
-      {% endif %}
-      <form method="post" action="{% url 'messaging:start' listing.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="btn-message">Message seller</button>
-      </form>
-      <p class="safety-note">Meet on campus and check the item before you pay.</p>
-      {% if user.is_authenticated and seller_profile.wechat_id or user.is_authenticated and seller_profile.wechat_qr %}
-        <div class="wechat-bar-spacer"></div>
-      {% endif %}
+        <form method="post" action="{% url 'messaging:start' listing.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-message">Message seller</button>
+        </form>
+        <p class="safety-note">Meet on campus and check the item before you pay.</p>
+      </div>
     {% endif %}
-  </div>
+  </section>
+
+  {# ---------- key details ---------- #}
+  <section class="detail-card detail-keys reveal">
+    <h2 class="detail-heading">Key details</h2>
+    <dl class="key-list">
+      <div class="key-row">
+        <dt><span class="key-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg></span>Condition</dt><dd>{{ listing.get_condition_display }}</dd>
+      </div>
+      <div class="key-row">
+        <dt><span class="key-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>Pickup location</dt><dd>{{ listing.get_campus_display }} campus</dd>
+      </div>
+      <div class="key-row">
+        <dt><span class="key-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Category</dt><dd>{{ listing.category.name }}</dd>
+      </div>
+      <div class="key-row">
+        <dt><span class="key-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>Posted</dt><dd>{{ listing.created_at|date:"j M Y" }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  {# ---------- more from this seller ---------- #}
+  {% if more_from_seller %}
+    <section class="detail-card detail-more reveal">
+      <div class="detail-more-head">
+        <h2 class="detail-heading mb-0">More from this seller</h2>
+        <a href="{% url 'accounts:profile' listing.seller.username %}" class="view-all">View all</a>
+      </div>
+      <div class="more-grid">
+        {% for item in more_from_seller %}
+          {% include "listings/_card.html" with listing=item %}
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {# ---------- why buy on campus ---------- #}
+  <section class="detail-card detail-why reveal">
+    <h2 class="detail-heading">Why buy on campus?</h2>
+    <ul class="why-list">
+      <li>
+        <span class="why-icon why-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <div><strong>Safe &amp; trusted</strong><span>Meet on campus, no shipping needed</span></div>
+      </li>
+      <li>
+        <span class="why-icon why-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span>
+        <div><strong>Great deals</strong><span>Quality items, better prices</span></div>
+      </li>
+      <li>
+        <span class="why-icon why-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.6 5.2"/></svg></span>
+        <div><strong>Support students</strong><span>Buy and sell within your community</span></div>
+      </li>
+      <li>
+        <span class="why-icon why-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 15-14-1 10-6 15-14 15"/><path d="M5 19c3-4 6-6.5 9-8"/></svg></span>
+        <div><strong>More sustainable</strong><span>Give items a second life</span></div>
+      </li>
+    </ul>
+  </section>
 </div>
+
+{% if user.is_authenticated and user != listing.seller %}{% if seller_profile.wechat_id or seller_profile.wechat_qr %}
+  <div class="wechat-bar-spacer"></div>
+{% endif %}{% endif %}
+
+{% if listing.images.all %}
+<script>
+  (function () {
+    var stage = document.getElementById('gallery-stage');
+    var slides = stage.querySelectorAll('.gallery-slide');
+    var thumbs = document.querySelectorAll('.gallery-thumb');
+    var counter = document.getElementById('gallery-counter');
+    var lightbox = document.getElementById('lightbox');
+    var lightboxImg = document.getElementById('lightbox-img');
+    var lightboxCounter = document.getElementById('lightbox-counter');
+    var total = slides.length;
+    var current = 0;
+
+    function show(index) {
+      current = (index + total) % total;
+      for (var i = 0; i < total; i++) {
+        slides[i].classList.toggle('is-active', i === current);
+      }
+      for (var j = 0; j < thumbs.length; j++) {
+        var active = j === current;
+        thumbs[j].classList.toggle('is-active', active);
+        if (active) { thumbs[j].setAttribute('aria-current', 'true'); } else { thumbs[j].removeAttribute('aria-current'); }
+      }
+      var label = (current + 1) + '/' + total;
+      if (counter) { counter.textContent = label; }
+      if (lightboxCounter) { lightboxCounter.textContent = label; }
+      lightboxImg.src = slides[current].src;
+      lightboxImg.alt = slides[current].alt;
+    }
+    function openLightbox() {
+      if (lightbox.showModal) { lightbox.showModal(); } else { lightbox.setAttribute('open', ''); }
+    }
+    function closeLightbox() {
+      if (lightbox.close) { lightbox.close(); } else { lightbox.removeAttribute('open'); }
+    }
+    function on(id, handler) {
+      var el = document.getElementById(id);
+      if (el) { el.addEventListener('click', handler); }
+    }
+
+    on('gallery-prev', function (event) { event.stopPropagation(); show(current - 1); });
+    on('gallery-next', function (event) { event.stopPropagation(); show(current + 1); });
+    on('lightbox-prev', function () { show(current - 1); });
+    on('lightbox-next', function () { show(current + 1); });
+    on('lightbox-close', closeLightbox);
+    for (var t = 0; t < thumbs.length; t++) {
+      thumbs[t].addEventListener('click', function () { show(Number(this.getAttribute('data-index'))); });
+    }
+
+    // click the big photo to see it full screen
+    for (var s = 0; s < total; s++) {
+      slides[s].addEventListener('click', openLightbox);
+    }
+    lightbox.addEventListener('click', function (event) {
+      if (event.target === lightbox) { closeLightbox(); }
+    });
+
+    // swipe left or right on phones
+    function addSwipe(el) {
+      var startX = 0, startY = 0;
+      el.addEventListener('touchstart', function (event) {
+        startX = event.touches[0].clientX;
+        startY = event.touches[0].clientY;
+      }, { passive: true });
+      el.addEventListener('touchend', function (event) {
+        var dx = event.changedTouches[0].clientX - startX;
+        var dy = event.changedTouches[0].clientY - startY;
+        if (total > 1 && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+          show(dx < 0 ? current + 1 : current - 1);
+        }
+      });
+    }
+    addSwipe(stage);
+    addSwipe(lightbox);
+
+    // left and right arrow keys, unless the user is typing or another popup is open
+    document.addEventListener('keydown', function (event) {
+      if (total < 2 || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) { return; }
+      var tag = event.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || event.target.isContentEditable) { return; }
+      var otherPopup = document.querySelector('dialog[open]:not(#lightbox)');
+      if (otherPopup) { return; }
+      event.preventDefault();
+      show(event.key === 'ArrowLeft' ? current - 1 : current + 1);
+    });
+  })();
+</script>
+{% endif %}
 {% endblock %}
