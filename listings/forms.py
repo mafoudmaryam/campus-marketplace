@@ -36,6 +36,14 @@ class ListingForm(forms.ModelForm):
         fields = ["title", "description", "price", "category", "condition", "campus"]
         widgets = {"description": forms.Textarea(attrs={"rows": 4})}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            widget = field.widget
+            css = "form-select" if isinstance(widget, forms.Select) else "form-control"
+            widget.attrs["class"] = f"{widget.attrs.get('class', '')} {css}".strip()
+        self.fields["images"].widget.attrs["accept"] = "image/*"
+
     def clean_price(self):
         price = self.cleaned_data["price"]
         if price < 0:
