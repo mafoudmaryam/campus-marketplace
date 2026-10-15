@@ -20,6 +20,7 @@
         <a class="btn btn-warning" href="{% url 'listings:create' %}">Sell an item</a>
         {% if user.is_authenticated %}
           <a class="navbar-text text-light text-decoration-none" href="{% url 'accounts:profile' user.username %}">Hi, {{ user.username }}</a>
+          <a class="btn btn-outline-light" href="{% url 'listings:my_listings' %}">My listings</a>
           <a class="btn btn-outline-light" href="{% url 'accounts:edit_profile' %}">Edit profile</a>
           <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
             {% csrf_token %}

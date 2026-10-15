@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}My listings - Campus Marketplace{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">My listings</h1>
+  <a class="btn btn-warning" href="{% url 'listings:create' %}">Sell an item</a>
+</div>
+
+<div class="list-group shadow-sm">
+  {% for listing in listings %}
+    <div class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <a href="{% url 'listings:detail' listing.pk %}" class="fw-bold text-decoration-none">{{ listing.title }}</a>
+        <div class="small text-muted">
+          {% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}
+          · {{ listing.category.name }}
+        </div>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <span class="badge {% if listing.status == 'sold' %}text-bg-danger{% elif listing.status == 'reserved' %}text-bg-warning{% else %}text-bg-success{% endif %}">{{ listing.get_status_display }}</span>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'listings:edit' listing.pk %}">Edit</a>
+        {% if listing.status != "sold" %}
+          <form method="post" action="{% url 'listings:mark_sold' listing.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-success">Mark as sold</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <div class="list-group-item text-muted">You have not listed anything yet.</div>
+  {% endfor %}
+</div>
+{% endblock %}

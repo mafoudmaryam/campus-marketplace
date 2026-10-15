@@ -77,3 +77,14 @@ def mark_sold(request, pk):
     listing.status = Listing.Status.SOLD
     listing.save()
     return redirect("listings:detail", pk=listing.pk)
+
+
+
+@login_required
+def my_listings(request):
+    listings = (
+        Listing.objects.filter(seller=request.user)
+        .select_related("category")
+        .prefetch_related("images")
+    )
+    return render(request, "listings/my_listings.html", {"listings": listings})
