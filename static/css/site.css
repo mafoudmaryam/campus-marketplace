@@ -149,20 +149,52 @@ body {
 
 /* ---------- hero ---------- */
 .hero {
-  background: linear-gradient(120deg, #dbeafe 0%, #e0f2fe 45%, #d1fae5 100%);
-  padding: 3.5rem 0;
-  text-align: center;
+  position: relative;
+  overflow: hidden;
+  /* fallback when the photo is missing */
+  background: linear-gradient(120deg, #eaf3ff 0%, #e6f6f4 100%);
+  padding: 2.75rem 0;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
 }
+/* photo on the right, fading softly into the light background on the left */
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 70%;
+  background: url("../img/hero.jpg") right 30% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 45%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 45%);
+}
+.hero .container { position: relative; z-index: 1; }
 .hero-title {
-  font-size: clamp(1.7rem, 4vw, 2.6rem);
+  max-width: 540px;
+  font-size: clamp(1.6rem, 3.6vw, 2.4rem);
   font-weight: 800;
-  color: #1e3a8a;
+  line-height: 1.2;
+  color: #0f2a4a;
   margin-bottom: .6rem;
 }
 .hero-subtitle {
-  font-size: clamp(1rem, 2vw, 1.2rem);
-  color: #047857;
+  max-width: 540px;
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  color: #334155;
   margin: 0;
+}
+
+@media (max-width: 767.98px) {
+  .hero { padding: 2rem 0; }
+  /* photo fills the banner but is dimmed under a light overlay so the text stays readable */
+  .hero::before {
+    width: 100%;
+    opacity: .3;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 
 /* ---------- category chips and filters ---------- */
