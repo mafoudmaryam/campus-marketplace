@@ -5,6 +5,12 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-8 col-lg-6">
+    {% if missing_wechat %}
+      <div class="alert alert-info">
+        <strong>Add your WeChat so buyers can contact you.</strong>
+        <a href="{% url 'accounts:edit_profile' %}">Go to your profile</a> to add your WeChat ID or QR code.
+      </div>
+    {% endif %}
     <div class="card">
       <div class="card-body p-4">
         <h1 class="h4 mb-3">{{ heading }}</h1>

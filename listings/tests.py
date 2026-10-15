@@ -288,3 +288,20 @@ class WechatContactTests(ListingTestBase):
         response = self.get()
         self.assertNotContains(response, "Contact the seller on WeChat")
         self.assertContains(response, "Message seller")
+
+    def test_sell_page_nudges_seller_without_wechat(self):
+        self.client.login(username="seller", password="pass12345")
+        response = self.client.get(reverse("listings:create"))
+        self.assertContains(response, "Add your WeChat so buyers can contact you")
+        self.assertContains(response, reverse("accounts:edit_profile"))
+
+    def test_sell_page_has_no_nudge_once_wechat_is_set(self):
+        self.set_wechat()
+        self.client.login(username="seller", password="pass12345")
+        response = self.client.get(reverse("listings:create"))
+        self.assertNotContains(response, "Add your WeChat so buyers can contact you")
+
+    def test_edit_page_has_no_nudge(self):
+        self.client.login(username="seller", password="pass12345")
+        response = self.client.get(reverse("listings:edit", args=[self.listing.pk]))
+        self.assertNotContains(response, "Add your WeChat so buyers can contact you")

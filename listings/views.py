@@ -117,7 +117,13 @@ def create(request):
             return redirect("listings:detail", pk=listing.pk)
     else:
         form = ListingForm()
-    return render(request, "listings/form.html", {"form": form, "heading": "Sell an item"})
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    context = {
+        "form": form,
+        "heading": "Sell an item",
+        "missing_wechat": not (profile.wechat_id or profile.wechat_qr),
+    }
+    return render(request, "listings/form.html", context)
 
 
 
