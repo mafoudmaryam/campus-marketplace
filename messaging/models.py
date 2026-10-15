@@ -7,6 +7,8 @@ from listings.models import Listing
 class Conversation(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="conversations")
     buyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="buying_conversations")
+    # people who moved this conversation out of their main inbox
+    archived_by = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="archived_conversations")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -33,7 +35,8 @@ class Conversation(models.Model):
 class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_messages")
-    body = models.TextField(max_length=2000)
+    body = models.TextField(max_length=2000, blank=True)
+    image = models.ImageField(upload_to="messages/", blank=True)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
