@@ -2,6 +2,8 @@
 
 {% block title %}{{ listing.title }} - Campus Marketplace{% endblock %}
 
+{% block hero %}<div class="detail-band" aria-hidden="true"></div>{% endblock %}
+
 {% block content %}
 {% for message in messages %}<div class="alert alert-warning">{{ message }}</div>{% endfor %}
 <nav aria-label="breadcrumb">
@@ -17,11 +19,9 @@
   {# ---------- photo gallery ---------- #}
   <section class="detail-gallery reveal" aria-label="Photos">
     {% with photos=listing.images.all %}
-    <div class="gallery-stage" id="gallery-stage"{% if photos|length > 1 %} tabindex="0" aria-roledescription="carousel"{% endif %}>
+    <div class="gallery-stage{% if not photos %} is-empty{% endif %}" id="gallery-stage"{% if photos|length > 1 %} tabindex="0" aria-roledescription="carousel"{% endif %}>
       {% for photo in photos %}
-        {# the same photo, blurred, fills the frame so tall or wide photos are never cut off #}
         <div class="gallery-slide{% if forloop.first %} is-active{% endif %}">
-          <img src="{{ photo.image.url }}" class="gallery-backdrop" alt="" aria-hidden="true"{% if not forloop.first %} loading="lazy"{% endif %}>
           <img src="{{ photo.image.url }}" class="gallery-photo" alt="{{ listing.title }} photo {{ forloop.counter }}"{% if not forloop.first %} loading="lazy"{% endif %}>
         </div>
       {% empty %}
@@ -30,11 +30,17 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
           </span>
           <strong>No photos yet</strong>
-          <span>The seller hasn't added a photo of this item.</span>
+          <span>Message the seller to ask for a picture.</span>
         </div>
       {% endfor %}
 
       <span class="status-pill status-{{ listing.status }}">{{ listing.get_status_display }}</span>
+
+      {% if photos %}
+        <button type="button" class="gallery-expand" id="gallery-zoom" aria-label="Open full screen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+        </button>
+      {% endif %}
 
       {% if photos|length > 1 %}
         <button type="button" class="gallery-arrow gallery-prev" id="gallery-prev" aria-label="Previous photo">
@@ -43,7 +49,7 @@
         <button type="button" class="gallery-arrow gallery-next" id="gallery-next" aria-label="Next photo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
         </button>
-        <span class="gallery-counter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span id="gallery-counter" aria-live="polite">1/{{ photos|length }}</span></span>
+        <span class="gallery-counter"><span id="gallery-counter" aria-live="polite">1/{{ photos|length }}</span></span>
       {% endif %}
     </div>
 
@@ -54,17 +60,6 @@
             <img src="{{ photo.image.url }}" alt="" loading="lazy">
           </button>
         {% endfor %}
-      </div>
-    {% elif photos %}
-      <div class="gallery-single">
-        <span class="gallery-single-text">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
-          1 photo
-        </span>
-        <button type="button" class="gallery-single-btn" id="gallery-zoom">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
-          View full size
-        </button>
       </div>
     {% endif %}
 
@@ -88,24 +83,35 @@
     {% endwith %}
   </section>
 
-  {# ---------- title, price, description, seller, contact ---------- #}
-  <section class="detail-card detail-main reveal-fade">
-    <h1 class="detail-title">{{ listing.title }}</h1>
-    <p class="detail-price">{% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}</p>
-
-    <div class="detail-tags">
-      <span class="detail-tag">{{ listing.category.name }}</span>
-      <span class="detail-tag">{{ listing.get_condition_display }}</span>
-      <span class="detail-tag">
+  {# ---------- buy box: price, seller, contact ---------- #}
+  <section class="buy-box detail-main reveal-fade">
+    <div class="buy-top">
+      <div class="buy-eyebrow">
+        <a href="{% url 'listings:home' %}?category={{ listing.category.slug }}">{{ listing.category.name }}</a>
+        <span class="dot-sep">·</span>
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
         {{ listing.get_campus_display }} campus
+      </div>
+      <button type="button" class="share-btn" id="share-btn" data-title="{{ listing.title }}" aria-label="Share this item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        <span id="share-label">Share</span>
+      </button>
+    </div>
+
+    <h1 class="detail-title">{{ listing.title }}</h1>
+
+    <div class="price-row">
+      <span class="detail-price">{% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}</span>
+      <span class="condition-badge">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+        {{ listing.get_condition_display }} condition
       </span>
     </div>
 
-    <div class="detail-stats">
+    <div class="buy-meta">
       <span class="meta-item">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-        Posted {{ listing.created_at|date:"j M Y" }}
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Posted {{ listing.created_at|timesince }} ago
       </span>
       <span class="meta-item">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -113,31 +119,24 @@
       </span>
     </div>
 
-    <div class="detail-section">
-      <h2 class="detail-heading">Description</h2>
-      <p class="detail-description">{{ listing.description|linebreaksbr }}</p>
-    </div>
-
-    <div class="detail-section">
-      <h2 class="detail-heading">Seller</h2>
-      <div class="detail-seller">
-        <a href="{% url 'accounts:profile' listing.seller.username %}" class="detail-seller-avatar" tabindex="-1" aria-hidden="true">
-          {% if seller_profile.avatar %}
-            <img class="seller-photo" src="{{ seller_profile.avatar.url }}" alt="">
-          {% else %}
-            <span class="seller-photo seller-photo-empty">
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8.5" r="4.5"/><path d="M3.5 21c.9-4.4 4.2-7 8.5-7s7.6 2.6 8.5 7z"/></svg>
-            </span>
-          {% endif %}
-        </a>
-        <div>
-          <a class="seller-name" href="{% url 'accounts:profile' listing.seller.username %}">{{ seller_profile.display_name|default:listing.seller.username }}</a>
-          <div class="seller-sub">{{ seller_items_count }} item{{ seller_items_count|pluralize }} for sale<span class="dot-sep">·</span>{{ seller_profile.get_campus_display }} campus</div>
-        </div>
-      </div>
-    </div>
+    <a class="seller-box" href="{% url 'accounts:profile' listing.seller.username %}">
+      {% if seller_profile.avatar %}
+        <img class="seller-photo" src="{{ seller_profile.avatar.url }}" alt="">
+      {% else %}
+        <span class="seller-photo seller-photo-empty" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.5" r="4.5"/><path d="M3.5 21c.9-4.4 4.2-7 8.5-7s7.6 2.6 8.5 7z"/></svg>
+        </span>
+      {% endif %}
+      <span class="seller-info">
+        <span class="seller-label">Sold by</span>
+        <span class="seller-name">{{ seller_profile.display_name|default:listing.seller.username }}</span>
+        <span class="seller-sub">{{ seller_items_count }} item{{ seller_items_count|pluralize }} for sale<span class="dot-sep">·</span>Member since {{ listing.seller.date_joined|date:"M Y" }}</span>
+      </span>
+      <svg class="seller-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
 
     {% if user == listing.seller %}
+      <p class="owner-note">This is your listing.</p>
       <div class="owner-actions">
         <a class="btn btn-outline-primary" href="{% url 'listings:edit' listing.pk %}">Edit</a>
         {% if listing.status != "sold" %}
@@ -153,13 +152,15 @@
       </div>
     {% else %}
       <div class="detail-contact">
+        <p class="contact-lead">Interested? Contact {{ seller_profile.display_name|default:listing.seller.username }} directly.</p>
         {% if user.is_authenticated %}
           {% if seller_profile.wechat_id or seller_profile.wechat_qr %}
             {% include "accounts/_wechat_bar.html" with profile=seller_profile seller=None sticky=True %}
           {% endif %}
         {% else %}
-          <div class="alert alert-info mb-0">
-            <a href="{% url 'accounts:login' %}?next={{ request.path }}">Log in</a> to chat with the seller on WeChat
+          <div class="login-nudge">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.5 3C5.4 3 2 5.8 2 9.3c0 2 1.1 3.7 2.8 4.9l-.7 2.1 2.5-1.3c.8.2 1.6.3 2.4.3h.5a5.5 5.5 0 0 1-.3-1.7c0-3.2 3-5.8 6.6-5.8h.5C16.1 4.9 13.1 3 9.5 3z"/><path fill="currentColor" d="M22 14.7c0-2.8-2.7-5-6-5s-6 2.2-6 5 2.7 5 6 5c.7 0 1.4-.1 2-.3l2 1.1-.6-1.8c1.5-.9 2.6-2.4 2.6-4z"/></svg>
+            <span><a href="{% url 'accounts:login' %}?next={{ request.path }}">Log in</a> to chat with the seller on WeChat</span>
           </div>
         {% endif %}
         <form method="post" action="{% url 'messaging:start' listing.pk %}">
@@ -171,34 +172,66 @@
         </form>
       </div>
     {% endif %}
+
+    <ul class="trust-list">
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Meet on campus, no shipping</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Check the item before you pay</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Fellow students, no middleman</li>
+    </ul>
   </section>
 
-  {# ---------- key details ---------- #}
-  <section class="detail-card side-card detail-keys reveal">
-    <h2 class="side-card-head">Key details</h2>
-    <ul class="key-list">
-      <li class="key-row">
-        <span class="key-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>
-        <div><span class="key-label">Condition</span><span class="key-value">{{ listing.get_condition_display }}</span></div>
+  {# ---------- about this item ---------- #}
+  <section class="detail-card detail-about reveal">
+    <h2 class="detail-heading">About this item</h2>
+    <p class="detail-description">{{ listing.description|linebreaksbr }}</p>
+
+    <h3 class="detail-subheading">Key details</h3>
+    <ul class="key-grid">
+      <li>
+        <span class="key-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8-4.3-4.1 5.9-.9z"/></svg></span>
+        <span><span class="key-label">Condition</span><span class="key-value">{{ listing.get_condition_display }}</span></span>
       </li>
-      <li class="key-row">
-        <span class="key-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7.5 7.5 0 0 0-7.5 7.5C4.5 15 12 22 12 22s7.5-7 7.5-12.5A7.5 7.5 0 0 0 12 2zm0 10.2a2.7 2.7 0 1 1 0-5.4 2.7 2.7 0 0 1 0 5.4z"/></svg></span>
-        <div><span class="key-label">Pickup location</span><span class="key-value">{{ listing.get_campus_display }} campus</span></div>
+      <li>
+        <span class="key-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <span><span class="key-label">Pickup location</span><span class="key-value">{{ listing.get_campus_display }} campus</span></span>
       </li>
-      <li class="key-row">
-        <span class="key-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6.5c0 5 3.4 9 8 10.5 4.6-1.5 8-5.5 8-10.5V5z"/><path d="m8.5 12 2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        <div><span class="key-label">Category</span><span class="key-value"><a href="{% url 'listings:home' %}?category={{ listing.category.slug }}">{{ listing.category.name }}</a></span></div>
+      <li>
+        <span class="key-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+        <span><span class="key-label">Category</span><span class="key-value"><a href="{% url 'listings:home' %}?category={{ listing.category.slug }}">{{ listing.category.name }}</a></span></span>
       </li>
-      <li class="key-row">
-        <span class="key-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-        <div><span class="key-label">Posted</span><span class="key-value">{{ listing.created_at|date:"j M Y" }}</span></div>
+      <li>
+        <span class="key-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+        <span><span class="key-label">Posted</span><span class="key-value">{{ listing.created_at|date:"j M Y" }}</span></span>
+      </li>
+    </ul>
+  </section>
+
+  {# ---------- why buy on campus ---------- #}
+  <section class="detail-why reveal">
+    <h2 class="detail-heading">Why buy on campus?</h2>
+    <ul class="why-grid">
+      <li>
+        <span class="why-icon why-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <strong>Safe &amp; trusted</strong><span>Meet on campus, no shipping needed</span>
+      </li>
+      <li>
+        <span class="why-icon why-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span>
+        <strong>Great deals</strong><span>Quality items, better prices</span>
+      </li>
+      <li>
+        <span class="why-icon why-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.6 5.2"/></svg></span>
+        <strong>Support students</strong><span>Buy and sell within your community</span>
+      </li>
+      <li>
+        <span class="why-icon why-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 15-14-1 10-6 15-14 15"/><path d="M5 19c3-4 6-6.5 9-8"/></svg></span>
+        <strong>More sustainable</strong><span>Give items a second life</span>
       </li>
     </ul>
   </section>
 
   {# ---------- more from this seller ---------- #}
   {% if more_from_seller %}
-    <section class="detail-card detail-more reveal">
+    <section class="detail-more reveal">
       <div class="detail-more-head">
         <h2 class="detail-heading mb-0">More from this seller</h2>
         <a href="{% url 'accounts:profile' listing.seller.username %}" class="view-all">View all
@@ -214,18 +247,14 @@
               {% endwith %}
             </div>
             <div class="mini-body">
-              <h3 class="mini-title"><a href="{% url 'listings:detail' item.pk %}" class="stretched-link">{{ item.title }}</a></h3>
               <p class="mini-price">{% if item.price == 0 %}Free{% else %}¥{{ item.price }}{% endif %}</p>
-              <div class="mini-tags">
-                <span class="mini-tag">{{ item.category.name }}</span>
-                <span class="mini-tag">
-                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {{ item.get_campus_display }} campus
-                </span>
-              </div>
-              <div class="mini-date">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-                Posted {{ item.created_at|date:"j M Y" }}
+              <h3 class="mini-title"><a href="{% url 'listings:detail' item.pk %}" class="stretched-link">{{ item.title }}</a></h3>
+              <div class="mini-meta">
+                <span>{{ item.category.name }}</span>
+                <span class="dot-sep">·</span>
+                <span>{{ item.get_campus_display }}</span>
+                <span class="dot-sep">·</span>
+                <span>{{ item.created_at|date:"j M" }}</span>
               </div>
             </div>
           </article>
@@ -233,34 +262,46 @@
       </div>
     </section>
   {% endif %}
-
-  {# ---------- why buy on campus ---------- #}
-  <section class="detail-card side-card detail-why reveal">
-    <h2 class="side-card-head">Why buy on campus?</h2>
-    <ul class="why-list">
-      <li>
-        <span class="why-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
-        <div><strong>Safe &amp; trusted</strong><span>Meet on campus, no shipping needed</span></div>
-      </li>
-      <li>
-        <span class="why-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 3c-9 0-15 4-15 11 0 1.6.4 3 1 4.2L4 20.5 5.5 22l2.3-2.3c1.2.6 2.6.8 4.2.8 7 0 8-8 8-17.5zM8 17c2.5-4 5-6.5 9-9-3 3.5-5.5 6-8 10.2z"/></svg></span>
-        <div><strong>Great deals</strong><span>Quality items, better prices</span></div>
-      </li>
-      <li>
-        <span class="why-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><circle cx="5" cy="9" r="2.5"/><circle cx="19" cy="9" r="2.5"/><path d="M5.5 19c.5-4 3-6.5 6.5-6.5s6 2.5 6.5 6.5zM.8 18c.3-2.7 1.8-4.5 4-4.5.6 0 1.1.1 1.6.3A9 9 0 0 0 4.3 18zM23.2 18h-3.5a9 9 0 0 0-2.1-4.2c.5-.2 1-.3 1.6-.3 2.2 0 3.7 1.8 4 4.5z"/></svg></span>
-        <div><strong>Support students</strong><span>Buy and sell within your community</span></div>
-      </li>
-      <li>
-        <span class="why-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 21v-6.2C7 14.3 4 11.3 4 7V5h2c3.2 0 5.8 1.9 6.7 4.6C14 6.9 16.5 5 19.5 5H21v2c0 4.4-3.4 7.6-8 7.9V21z"/></svg></span>
-        <div><strong>More sustainable</strong><span>Give items a second life</span></div>
-      </li>
-    </ul>
-  </section>
 </div>
 
 {% if user.is_authenticated and user != listing.seller %}{% if seller_profile.wechat_id or seller_profile.wechat_qr %}
   <div class="wechat-bar-spacer"></div>
 {% endif %}{% endif %}
+
+<script>
+  // on short screens let the buy box scroll until its buttons are visible, then keep it there
+  (function () {
+    var box = document.querySelector('.buy-box');
+    function fit() {
+      var top = Math.min(20, window.innerHeight - box.offsetHeight - 20);
+      box.style.setProperty('--stick-top', top + 'px');
+    }
+    fit();
+    window.addEventListener('resize', fit);
+  })();
+
+  // share on phones, copy the link on computers
+  (function () {
+    var btn = document.getElementById('share-btn');
+    var label = document.getElementById('share-label');
+    var timer = null;
+    function done(text) {
+      label.textContent = text;
+      clearTimeout(timer);
+      timer = setTimeout(function () { label.textContent = 'Share'; }, 2000);
+    }
+    btn.addEventListener('click', function () {
+      var url = window.location.href;
+      if (navigator.share) {
+        navigator.share({ title: btn.getAttribute('data-title'), url: url }).catch(function () {});
+      } else if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(function () { done('Link copied!'); }, function () { window.prompt('Copy this link:', url); });
+      } else {
+        window.prompt('Copy this link:', url);
+      }
+    });
+  })();
+</script>
 
 {% if listing.images.all %}
 <script>
@@ -308,7 +349,7 @@
     on('lightbox-prev', function () { show(current - 1); });
     on('lightbox-next', function () { show(current + 1); });
     on('lightbox-close', closeLightbox);
-    on('gallery-zoom', openLightbox);
+    on('gallery-zoom', function (event) { event.stopPropagation(); openLightbox(); });
     for (var t = 0; t < thumbs.length; t++) {
       thumbs[t].addEventListener('click', function () { show(Number(this.getAttribute('data-index'))); });
     }

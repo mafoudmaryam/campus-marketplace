@@ -405,7 +405,7 @@ class DetailPageTests(ListingTestBase):
     def test_no_photo_has_no_arrows(self):
         response = self.get()
         self.assertContains(response, "No photos yet")
-        self.assertNotContains(response, "View full size")
+        self.assertNotContains(response, 'id="gallery-zoom"')
         self.assertNotContains(response, 'id="gallery-next"')
         self.assertNotContains(response, 'id="lightbox"')
 
@@ -416,7 +416,7 @@ class DetailPageTests(ListingTestBase):
         self.assertContains(response, 'id="lightbox"')
         self.assertNotContains(response, 'id="gallery-next"')
         self.assertNotContains(response, 'class="gallery-thumb')
-        self.assertContains(response, "View full size")
+        self.assertContains(response, 'id="gallery-zoom"')
 
     def test_several_photos_get_arrows_counter_and_thumbnails(self):
         self.add_photos(3)
@@ -424,7 +424,6 @@ class DetailPageTests(ListingTestBase):
         self.assertContains(response, 'id="gallery-next"')
         self.assertContains(response, ">1/3<")
         self.assertContains(response, 'aria-label="Show photo', count=3)
-        self.assertNotContains(response, "View full size")
 
     def test_seller_block_shows_item_count(self):
         self.make_listing("Lamp")
