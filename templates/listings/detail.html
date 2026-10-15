@@ -29,7 +29,7 @@
   <div class="product-grid">
 
     {# ---------- photos ---------- #}
-    <section class="product-media" aria-label="Photos">
+    <section class="product-media{% if listing.images.all|length > 1 %} has-thumbs{% endif %}" aria-label="Photos">
       {% with photos=listing.images.all %}
       <div class="gallery-stage{% if not photos %} is-empty{% endif %}" id="gallery-stage"{% if photos|length > 1 %} tabindex="0" aria-roledescription="carousel"{% endif %}>
         {% for photo in photos %}
@@ -97,30 +97,35 @@
 
     {# ---------- information and actions ---------- #}
     <section class="product-info">
-      <p class="product-kicker">{{ listing.category.name }}</p>
       <h1 class="product-title">{{ listing.title }}</h1>
       <p class="product-by">
         By <a href="{% url 'accounts:profile' listing.seller.username %}">{{ seller_profile.display_name|default:listing.seller.username }}</a>
         <span class="dot-sep">·</span>
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        {{ listing.get_campus_display }} campus
+        Posted {{ listing.created_at|timesince }} ago
+        <span class="dot-sep">·</span>
+        Viewed {{ listing.views }} time{{ listing.views|pluralize }}
       </p>
 
-      <div class="product-price-row">
-        <span class="product-price">{% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}</span>
-        <span class="condition-chip">{{ listing.get_condition_display }} condition</span>
-      </div>
+      <p class="product-price">{% if listing.price == 0 %}Free{% else %}¥{{ listing.price }}{% endif %}</p>
 
-      <h2 class="product-heading">Key details</h2>
-      <dl class="product-rows">
-        <div><dt>Condition</dt><dd>{{ listing.get_condition_display }}</dd></div>
-        <div><dt>Pickup location</dt><dd>{{ listing.get_campus_display }} campus</dd></div>
-        <div><dt>Posted</dt><dd>{{ listing.created_at|timesince }} ago</dd></div>
-        <div><dt>Views</dt><dd>Viewed {{ listing.views }} time{{ listing.views|pluralize }}</dd></div>
-      </dl>
+      <ul class="product-facts" aria-label="Key details">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8-4.3-4.1 5.9-.9z"/></svg>
+          <span><small>Condition</small>{{ listing.get_condition_display }}</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span><small>Pickup location</small>{{ listing.get_campus_display }}</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span><small>Category</small>{{ listing.category.name }}</span>
+        </li>
+      </ul>
 
       <h2 class="product-heading">Description</h2>
-      <p class="product-description">{{ listing.description|linebreaksbr }}</p>
+      <p class="product-description is-clamped" id="description">{{ listing.description|linebreaksbr }}</p>
+      <button type="button" class="read-more" id="read-more" hidden>Read more</button>
 
       {% if user == listing.seller %}
         <div class="product-actions owner-actions">
@@ -161,7 +166,7 @@
         </div>
         <p class="product-safety">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
-          Meet on campus and check the item before you pay.
+          Meet at {{ listing.get_campus_display }} campus and check the item before you pay.
         </p>
       {% endif %}
 
@@ -228,6 +233,17 @@
 {% if user != listing.seller %}<div class="action-bar-spacer"></div>{% endif %}
 
 <script>
+  // long descriptions start short, with a button to show the rest
+  (function () {
+    var text = document.getElementById('description');
+    var more = document.getElementById('read-more');
+    if (text.scrollHeight > text.clientHeight + 2) { more.hidden = false; }
+    more.addEventListener('click', function () {
+      var open = text.classList.toggle('is-clamped') === false;
+      more.textContent = open ? 'Show less' : 'Read more';
+    });
+  })();
+
   // share on phones, copy the link on computers
   (function () {
     var btn = document.getElementById('share-btn');
