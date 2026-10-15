@@ -35,6 +35,7 @@ class Listing(models.Model):
     condition = models.CharField(max_length=10, choices=Condition.choices, default=Condition.GOOD)
     campus = models.CharField(max_length=10, choices=Campus.choices, default=Campus.WANGJIANG)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.AVAILABLE)
+    views = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

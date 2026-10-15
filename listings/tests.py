@@ -349,3 +349,22 @@ class WechatContactTests(ListingTestBase):
         self.set_wechat()
         response = self.get()
         self.assertNotContains(response, "Usually replies on WeChat")
+
+
+class ViewCountTests(ListingTestBase):
+    def views(self):
+        self.listing.refresh_from_db()
+        return self.listing.views
+
+    def test_each_visit_by_a_non_seller_counts(self):
+        url = reverse("listings:detail", args=[self.listing.pk])
+        self.client.get(url)
+        self.client.get(url)
+        self.client.login(username="other", password="pass12345")
+        self.client.get(url)
+        self.assertEqual(self.views(), 3)
+
+    def test_seller_visits_do_not_count(self):
+        self.client.login(username="seller", password="pass12345")
+        self.client.get(reverse("listings:detail", args=[self.listing.pk]))
+        self.assertEqual(self.views(), 0)

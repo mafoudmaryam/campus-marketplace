@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import F, Q
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -100,6 +100,10 @@ def detail(request, pk):
         Listing.objects.select_related("category", "seller").prefetch_related("images"),
         pk=pk,
     )
+    if request.user != listing.seller:
+        # count the view in the database, then show the new number
+        Listing.objects.filter(pk=listing.pk).update(views=F("views") + 1)
+        listing.views += 1
     seller_profile, _ = Profile.objects.get_or_create(user=listing.seller)
     return render(request, "listings/detail.html", {"listing": listing, "seller_profile": seller_profile})
 
