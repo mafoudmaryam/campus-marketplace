@@ -6,7 +6,7 @@
   if (reduce) { return; }
 
   // ripple from the exact spot you tapped or clicked
-  var RIPPLE = '.btn, .btn-message, .wechat-btn, .wechat-login, .chip, .icon-btn, .gallery-thumb, .seller-link, .gallery-expand';
+  var RIPPLE = '.btn, .btn-message, .wechat-btn, .wechat-login, .chip, .icon-btn, .gallery-thumb, .seller-link, .gallery-expand, .chat-send, .quick-reply, .inbox-item';
   document.addEventListener('pointerdown', function (event) {
     var el = event.target.closest(RIPPLE);
     if (!el || el.disabled) { return; }

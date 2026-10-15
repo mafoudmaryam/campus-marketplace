@@ -1,0 +1,231 @@
+{% with listing=conversation.listing profile=other.profile %}
+{# ---------- header: the other person and the item ---------- #}
+<header class="chat-head">
+  {% if layout == "inbox" %}
+    <a class="chat-back" href="{% url 'messaging:inbox' %}{% if tab != 'all' %}?tab={{ tab }}{% endif %}" aria-label="Back to messages">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    </a>
+  {% endif %}
+  <a class="chat-person" href="{% url 'accounts:profile' other.username %}">
+    {% if profile.avatar %}
+      <img class="chat-avatar chat-avatar-lg" src="{{ profile.avatar.url }}" alt="">
+    {% else %}
+      <span class="chat-avatar chat-avatar-lg chat-avatar-empty" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.5" r="4.5"/><path d="M3.5 21c.9-4.4 4.2-7 8.5-7s7.6 2.6 8.5 7z"/></svg></span>
+    {% endif %}
+    <span class="chat-person-text">
+      <span class="chat-name">{{ profile.display_name|default:other.username }}</span>
+      <span class="chat-sub">
+        {% if layout == "inbox" %}
+          {{ profile.get_campus_display|default:listing.get_campus_display }} campus{% if other_items_count %}<span class="dot-sep">·</span>{{ other_items_count }} item{{ other_items_count|pluralize }} for sale{% endif %}
+        {% else %}
+          About: {{ listing.title }}<span class="dot-sep">·</span>{{ listing.get_campus_display }} campus
+        {% endif %}
+      </span>
+    </span>
+  </a>
+
+  {% if layout != "inbox" %}
+    <a class="chat-view-item" href="{% url 'listings:detail' listing.pk %}">
+      View item
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+    </a>
+  {% endif %}
+
+  <a class="chat-item" href="{% url 'listings:detail' listing.pk %}">
+    {% with photo=listing.images.all.0 %}
+      {% if photo %}<img src="{{ photo.image.url }}" alt="">{% else %}<span class="chat-item-nophoto" aria-hidden="true"></span>{% endif %}
+    {% endwith %}
+    <span class="chat-item-text">
+      <span class="chat-item-title">{{ listing.title }}</span>
+      <span class="chat-item-price">{% if listing.price == 0 %}Free{% else %}¥{{ listing.price|floatformat:"-2" }}{% endif %}</span>
+      <span class="chat-status chat-status-{{ listing.status }}">{{ listing.get_status_display }}</span>
+    </span>
+  </a>
+
+  {% if layout == "inbox" %}
+    <div class="chat-menu">
+      <button type="button" class="chat-menu-btn" id="chat-menu-btn" aria-label="More options" aria-expanded="false" aria-controls="chat-menu-list">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+      </button>
+      <div class="chat-menu-list" id="chat-menu-list" hidden>
+        <a href="{% url 'listings:detail' listing.pk %}">View item</a>
+        <a href="{% url 'accounts:profile' other.username %}">View profile</a>
+        <form method="post" action="{% url 'messaging:archive' conversation.pk %}">
+          {% csrf_token %}
+          <button type="submit">{% if conversation.is_archived %}Move back to inbox{% else %}Archive conversation{% endif %}</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+</header>
+
+{# ---------- messages ---------- #}
+<div class="chat-body" id="chat-body">
+  {% for message in chat %}
+    {% ifchanged message.created_at.date %}
+      <div class="chat-day"><span>{{ message.created_at|date:"M j, Y" }}</span></div>
+    {% endifchanged %}
+    {% if message.sender == user %}
+      <div class="msg msg-mine">
+        <div class="msg-stack">
+          <div class="msg-bubble">
+            {% if message.image %}<a href="{{ message.image.url }}" target="_blank" rel="noopener"><img class="msg-photo" src="{{ message.image.url }}" alt="Photo"></a>{% endif %}
+            {% if message.body %}<span class="msg-text">{{ message.body|linebreaksbr }}</span>{% endif %}
+          </div>
+          <div class="msg-meta">
+            {{ message.created_at|time:"H:i" }}
+            {% if message.is_read %}
+              <svg class="msg-tick is-read" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-label="Read"><path d="m2 13 4 4L16 7M10 15l2 2L22 7"/></svg>
+            {% else %}
+              <svg class="msg-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-label="Sent"><path d="m5 12 5 5L20 7"/></svg>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="msg msg-theirs">
+        {% if message.sender.profile.avatar %}
+          <img class="chat-avatar" src="{{ message.sender.profile.avatar.url }}" alt="">
+        {% else %}
+          <span class="chat-avatar chat-avatar-empty" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.5" r="4.5"/><path d="M3.5 21c.9-4.4 4.2-7 8.5-7s7.6 2.6 8.5 7z"/></svg></span>
+        {% endif %}
+        <div class="msg-stack">
+          <div class="msg-bubble">
+            {% if message.image %}<a href="{{ message.image.url }}" target="_blank" rel="noopener"><img class="msg-photo" src="{{ message.image.url }}" alt="Photo"></a>{% endif %}
+            {% if message.body %}<span class="msg-text">{{ message.body|linebreaksbr }}</span>{% endif %}
+          </div>
+          <div class="msg-meta">{{ message.created_at|time:"H:i" }}</div>
+        </div>
+      </div>
+    {% endif %}
+  {% empty %}
+    <div class="chat-empty">
+      <svg class="chat-empty-art" viewBox="0 0 220 150" aria-hidden="true">
+        <ellipse cx="110" cy="82" rx="104" ry="64" fill="#eaf2ff"/>
+        <path d="M128 70h40a14 14 0 0 1 14 14v22a14 14 0 0 1-14 14h-6l2 16-16-16h-20a14 14 0 0 1-14-14V84a14 14 0 0 1 14-14z" fill="#bcd3fb"/>
+        <circle cx="140" cy="96" r="4" fill="#fff"/><circle cx="154" cy="96" r="4" fill="#fff"/>
+        <path d="M54 34h70a18 18 0 0 1 18 18v26a18 18 0 0 1-18 18H82l-24 20 4-20h-8a18 18 0 0 1-18-18V52a18 18 0 0 1 18-18z" fill="#2563eb"/>
+        <circle cx="72" cy="65" r="6" fill="#fff"/><circle cx="90" cy="65" r="6" fill="#fff"/><circle cx="108" cy="63" r="6" fill="#fff"/>
+        <path d="M158 22l-4 12M172 30l-9 8M178 46l-12 2" stroke="#f97316" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      {% if is_buyer %}
+        <h2 class="chat-empty-title">Start the conversation</h2>
+        <p class="chat-empty-text">Ask about the {{ listing.title }}, its condition, or a good time to meet on campus.</p>
+        <div class="quick-replies">
+          <button type="button" class="quick-reply">Hi! Is this still available?</button>
+          <button type="button" class="quick-reply">Could I see it on campus?</button>
+          <button type="button" class="quick-reply">Is the price negotiable?</button>
+        </div>
+      {% else %}
+        <h2 class="chat-empty-title">No messages yet</h2>
+        <p class="chat-empty-text">You'll see the buyer's messages about {{ listing.title }} here.</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+{# ---------- message box ---------- #}
+<form class="chat-compose" method="post" action="{% url 'messaging:conversation' conversation.pk %}" enctype="multipart/form-data" id="chat-form">
+  {% csrf_token %}
+  {% if layout == "inbox" %}<input type="hidden" name="next" value="inbox">{% endif %}
+  {% if form.non_field_errors or form.errors %}
+    <div class="chat-error">{{ form.non_field_errors|join:" " }}{{ form.image.errors|join:" " }}</div>
+  {% endif %}
+  <div class="chat-attachment" id="chat-attachment" hidden>
+    <img id="chat-attachment-img" alt="">
+    <span id="chat-attachment-name"></span>
+    <button type="button" id="chat-attachment-remove" aria-label="Remove photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="chat-compose-row">
+    <div class="chat-input">
+      <label class="chat-attach" title="Add a photo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.1 12.2 20.3a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>
+        <span class="visually-hidden">Add a photo</span>
+        <input type="file" name="image" accept="image/*" id="chat-file">
+      </label>
+      <textarea name="body" rows="1" maxlength="2000" id="chat-text" placeholder="{% if layout == 'inbox' %}Type a message...{% else %}Write a message to {{ profile.display_name|default:other.username }}...{% endif %}" aria-label="Message">{{ form.body.value|default:"" }}</textarea>
+    </div>
+    <button type="submit" class="chat-send">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>
+      <span class="chat-send-label">{% if layout == "inbox" %}Send{% else %}Send message{% endif %}</span>
+    </button>
+  </div>
+  <p class="chat-note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+    Meet on campus and inspect the item before paying.
+  </p>
+</form>
+{% endwith %}
+
+<script>
+  (function () {
+    var body = document.getElementById('chat-body');
+    var form = document.getElementById('chat-form');
+    var text = document.getElementById('chat-text');
+    var file = document.getElementById('chat-file');
+    var box = document.getElementById('chat-attachment');
+    var boxImg = document.getElementById('chat-attachment-img');
+    var boxName = document.getElementById('chat-attachment-name');
+
+    // open the chat at the newest message
+    body.scrollTop = body.scrollHeight;
+
+    // the message box grows with the text
+    function grow() {
+      text.style.height = 'auto';
+      text.style.height = Math.min(text.scrollHeight, 140) + 'px';
+    }
+    text.addEventListener('input', grow);
+    grow();
+
+    // Enter sends, Shift + Enter makes a new line
+    text.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+        if (text.value.trim() || file.files.length) { form.requestSubmit ? form.requestSubmit() : form.submit(); }
+      }
+    });
+
+    // quick replies fill in the message box
+    var chips = document.querySelectorAll('.quick-reply');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].addEventListener('click', function () {
+        text.value = this.textContent;
+        grow();
+        text.focus();
+      });
+    }
+
+    // show the chosen photo before sending
+    file.addEventListener('change', function () {
+      var chosen = file.files[0];
+      if (!chosen) { box.hidden = true; return; }
+      boxName.textContent = chosen.name;
+      boxImg.src = URL.createObjectURL(chosen);
+      box.hidden = false;
+    });
+    document.getElementById('chat-attachment-remove').addEventListener('click', function () {
+      file.value = '';
+      box.hidden = true;
+    });
+
+    // three-dots menu
+    var menuBtn = document.getElementById('chat-menu-btn');
+    if (menuBtn) {
+      var menu = document.getElementById('chat-menu-list');
+      menuBtn.addEventListener('click', function (event) {
+        event.stopPropagation();
+        menu.hidden = !menu.hidden;
+        menuBtn.setAttribute('aria-expanded', String(!menu.hidden));
+      });
+      document.addEventListener('click', function (event) {
+        if (!menu.contains(event.target)) {
+          menu.hidden = true;
+          menuBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+  })();
+</script>
