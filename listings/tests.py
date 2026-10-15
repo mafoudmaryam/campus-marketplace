@@ -320,7 +320,7 @@ class WechatContactTests(ListingTestBase):
         self.client.login(username="seller", password="pass12345")
         self.assertNotContains(self.get(), "Chat on WeChat")
 
-    def test_seller_card_message_button_and_safety_note(self):
+    def test_seller_block_and_message_button(self):
         self.seller.profile.display_name = "Sally"
         self.seller.profile.save()
         self.set_wechat()
@@ -328,10 +328,8 @@ class WechatContactTests(ListingTestBase):
         response = self.get()
         self.assertContains(response, "Sally")
         self.assertContains(response, "Wangjiang campus")
-        self.assertContains(response, "Usually replies on WeChat")
         self.assertContains(response, 'class="btn-message"')
         self.assertContains(response, "Message seller")
-        self.assertContains(response, "Meet on campus and check the item before you pay.")
 
     def test_popup_has_copy_button_and_numbered_steps(self):
         self.set_wechat(qr=True)
