@@ -3,6 +3,7 @@
 {% block title %}{{ listing.title }} - Campus Marketplace{% endblock %}
 
 {% block content %}
+{% for message in messages %}<div class="alert alert-warning">{{ message }}</div>{% endfor %}
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="{% url 'listings:home' %}">Home</a></li>
@@ -56,7 +57,10 @@
         </form>
       </div>
     {% else %}
-      <a class="btn btn-primary btn-lg w-100" href="#">Message seller</a>
+      <form method="post" action="{% url 'messaging:start' listing.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-lg w-100">Message seller</button>
+      </form>
     {% endif %}
   </div>
 </div>
