@@ -17,11 +17,11 @@
       <a href="{% url 'listings:detail' conversation.listing.pk %}">{{ conversation.listing.title }}</a>
     </h1>
 
-    <div class="card shadow-sm mb-3">
+    <div class="card mb-3">
       <div class="card-body">
         {% for message in chat %}
           <div class="mb-2 {% if message.sender == user %}text-end{% endif %}">
-            <span class="d-inline-block px-3 py-2 rounded {% if message.sender == user %}bg-primary text-white{% else %}bg-secondary-subtle{% endif %}">{{ message.body|linebreaksbr }}</span>
+            <span class="d-inline-block px-3 py-2 bubble {% if message.sender == user %}bubble-mine{% else %}bubble-theirs{% endif %}">{{ message.body|linebreaksbr }}</span>
             <div class="small text-muted">{{ message.sender.username }} · {{ message.created_at|date:"j M, H:i" }}</div>
           </div>
         {% empty %}
@@ -30,7 +30,7 @@
       </div>
     </div>
 
-    <form method="post">
+    <form class="form-plain" method="post">
       {% csrf_token %}
       {{ form.as_p }}
       <button type="submit" class="btn btn-primary">Send</button>
